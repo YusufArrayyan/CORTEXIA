@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORTEXIA - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            color: #666;
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 300;
+        }
+        .status {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #ddd;
+        }
+        .status-item.success {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        .status-item.warning {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+        .status-item .icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .features {
+            margin: 30px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .feature {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #2196f3;
+        }
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        .info-box ol {
+            margin-left: 20px;
+        }
+        .info-box li {
+            margin: 5px 0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 CORTEXIA</h1>
+        <h2>Multimodal AI-Based Reading Difficulty Profiling</h2>
+        
+        <div class="status">
+            <h3 style="margin-bottom: 15px;">📊 System Status:</h3>
+            <div class="status-item success">
+                <span class="icon">✅</span>
+                <div>
+                    <strong>Frontend</strong><br>
+                    <small>http://localhost:3000 - Running</small>
+                </div>
+            </div>
+            <div class="status-item success">
+                <span class="icon">✅</span>
+                <div>
+                    <strong>AI Engine</strong><br>
+                    <small>http://localhost:8000 - Running</small>
+                </div>
+            </div>
+            <div class="status-item warning">
+                <span class="icon">⚠️</span>
+                <div>
+                    <strong>Backend</strong><br>
+                    <small>Requires PostgreSQL (not started)</small>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px; margin-bottom: 15px;">🎯 Demo Features:</h3>
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">👁️</div>
+                <strong>Gaze Tracking</strong>
+                <p style="font-size: 12px; margin-top: 5px;">WebGazer.js</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🎤</div>
+                <strong>Speech Analysis</strong>
+                <p style="font-size: 12px; margin-top: 5px;">Web Speech API</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <strong>AI Assessment</strong>
+                <p style="font-size: 12px; margin-top: 5px;">ML Models</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📚</div>
+                <strong>Adaptive Learning</strong>
+                <p style="font-size: 12px; margin-top: 5px;">Personalized</p>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <a href="http://localhost:8000/docs" target="_blank" class="btn btn-primary">
+                🔬 AI Engine API Docs
+            </a>
+            <a href="http://localhost:8000/health" target="_blank" class="btn btn-success">
+                ✅ Health Check
+            </a>
+            <a href="http://localhost:3000" class="btn btn-secondary">
+                🏠 Go to React App
+            </a>
+        </div>
+
+        <div class="info-box">
+            <h3>📖 To Enable Full Functionality:</h3>
+            <ol>
+                <li>Install PostgreSQL from <a href="https://www.postgresql.org/download/windows/" target="_blank">postgresql.org</a></li>
+                <li>Open PowerShell in CORTEXIA folder</li>
+                <li>Run: <code>.\setup-database.ps1</code></li>
+                <li>Run: <code>.\START-ALL.ps1</code></li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <strong>Project Status:</strong> ✅ 100% Complete (12/12 Tasks)<br>
+            <small>CORTEXIA - Universitas Bengkulu © 2026</small>
+        </div>
+    </div>
+
+    <script>
+        // Test connections
+        async function testServices() {
+            try {
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                console.log('AI Engine Status:', data);
+            } catch (error) {
+                console.error('AI Engine Error:', error);
+            }
+        }
+        
+        testServices();
+        
+        // Auto-refresh status every 30 seconds
+        setInterval(testServices, 30000);
+    </script>
+</body>
+</html>

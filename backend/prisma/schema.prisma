@@ -1,0 +1,616 @@
+// Prisma Schema for CORTEXIA
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  siswa
+  guru
+  orang_tua
+  admin
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum AssessmentType {
+  asesmen_awal
+  asesmen_berkala
+  re_assessment
+  latihan
+}
+
+enum DifficultyLevel {
+  sangat_mudah
+  mudah
+  sedang
+  sulit
+  sangat_sulit
+}
+
+enum FonologiArea {
+  konsonan
+  vokal
+  diftong
+  kluster_konsonan
+  suku_kata
+  blending
+  segmentasi
+}
+
+// Users & Authentication
+model User {
+  id              String      @id @default(uuid())
+  email           String      @unique
+  username        String      @unique
+  passwordHash    String      @map("password_hash")
+  role            UserRole
+  status          UserStatus  @default(active)
+  emailVerified   Boolean     @default(false) @map("email_verified")
+  lastLogin       DateTime?   @map("last_login")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  deletedAt       DateTime?   @map("deleted_at")
+
+  // Relations
+  siswa           Siswa?
+  guru            Guru?
+  orangTua        OrangTua?   @relation("OrangTuaUser")
+  admin           Admin?
+  refreshTokens   RefreshToken[]
+  sentMessages    Pesan[]     @relation("SentMessages")
+  receivedMessages Pesan[]    @relation("ReceivedMessages")
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  createdMaterials MateriaBacaan[] @relation("CreatedMaterials")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model Siswa {
+  id              String      @id @default(uuid())
+  userId          String      @unique @map("user_id")
+  namaLengkap     String      @map("nama_lengkap")
+  tanggalLahir    DateTime    @map("tanggal_lahir") @db.Date
+  jenisKelamin    String?     @map("jenis_kelamin")
+  kelas           String?
+  sekolah         String?
+  nomorInduk      String?     @map("nomor_induk")
+  fotoProfil      String?     @map("foto_profil")
+  alamat          String?
+  nomorTelepon    String?     @map("nomor_telepon")
+  orangTuaId      String?     @map("orang_tua_id")
+  guruId          String?     @map("guru_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orangTua        User?       @relation("SiswaOrangTua", fields: [orangTuaId], references: [id])
+  guru            User?       @relation("SiswaGuru", fields: [guruId], references: [id])
+  kalibrasiMata   KalibrasiMata[]
+  asesmen         Asesmen[]
+  profilKesulitan ProfilKesulitan[]
+  rekomendasi     RekomendasiPembelajaran[]
+  progress        ProgressPembelajaran[]
+  intervensi      Intervensi[]
+  feedback        FeedbackSiswa[]
+  hasilAsesmen    HasilAsesmen[]
+
+  @@index([userId])
+  @@index([orangTuaId])
+  @@index([guruId])
+  @@map("siswa")
+}
+
+model Guru {
+  id              String      @id @default(uuid())
+  userId          String      @unique @map("user_id")
+  namaLengkap     String      @map("nama_lengkap")
+  nip             String?
+  mataPelajaran   String?     @map("mata_pelajaran")
+  sekolah         String?
+  nomorTelepon    String?     @map("nomor_telepon")
+  fotoProfil      String?     @map("foto_profil")
+  spesialisasi    String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  siswaList       Siswa[]     @relation("SiswaGuru")
+  intervensi      Intervensi[]
+  analyticsKelas  AnalyticsKelas[]
+
+  @@index([userId])
+  @@map("guru")
+}
+
+model OrangTua {
+  id              String      @id @default(uuid())
+  userId          String      @unique @map("user_id")
+  namaLengkap     String      @map("nama_lengkap")
+  hubunganDenganAnak String?  @map("hubungan_dengan_anak")
+  nomorTelepon    String?     @map("nomor_telepon")
+  pekerjaan       String?
+  alamat          String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user            User        @relation("OrangTuaUser", fields: [userId], references: [id], onDelete: Cascade)
+  anakList        Siswa[]     @relation("SiswaOrangTua")
+  monitoring      MonitoringOrangTua[]
+
+  @@index([userId])
+  @@map("orang_tua")
+}
+
+model Admin {
+  id              String      @id @default(uuid())
+  userId          String      @unique @map("user_id")
+  namaLengkap     String      @map("nama_lengkap")
+  level           String?
+  permissions     Json?
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin")
+}
+
+model RefreshToken {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  token           String
+  expiresAt       DateTime    @map("expires_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// Assessment & Calibration
+model KalibrasiMata {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  sessionId       String      @unique @map("session_id")
+  calibrationData Json?       @map("calibration_data")
+  accuracyScore   Decimal?    @map("accuracy_score") @db.Decimal(5, 2)
+  status          String?
+  startedAt       DateTime?   @map("started_at")
+  completedAt     DateTime?   @map("completed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  asesmen         Asesmen[]
+
+  @@index([siswaId])
+  @@map("kalibrasi_mata")
+}
+
+model Asesmen {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  kalibrasiId     String?     @map("kalibrasi_id")
+  type            AssessmentType
+  materiId        String?     @map("materi_id")
+  status          String?
+  durasiDetik     Int?        @map("durasi_detik")
+  startedAt       DateTime?   @map("started_at")
+  completedAt     DateTime?   @map("completed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kalibrasi       KalibrasiMata? @relation(fields: [kalibrasiId], references: [id])
+  materi          MateriaBacaan? @relation(fields: [materiId], references: [id])
+  dataGaze        DataGazeTracking[]
+  analisisGaze    AnalisisGaze?
+  rekamanSuara    RekamanSuara[]
+  analisisSuara   AnalisisSuara?
+  hasilAsesmen    HasilAsesmen?
+
+  @@index([siswaId])
+  @@index([type])
+  @@map("asesmen")
+}
+
+// Reading Materials
+model MateriaBacaan {
+  id              String      @id @default(uuid())
+  judul           String
+  konten          String
+  deskripsi       String?
+  tingkatKesulitan DifficultyLevel? @map("tingkat_kesulitan")
+  kategori        String?
+  subKategori     String?     @map("sub_kategori")
+  kataKunci       String[]    @map("kata_kunci")
+  jumlahKata      Int?        @map("jumlah_kata")
+  estimasiDurasiMenit Int?    @map("estimasi_durasi_menit")
+  audioUrl        String?     @map("audio_url")
+  gambarUrl       String?     @map("gambar_url")
+  fokusFonologi   Json?       @map("fokus_fonologi")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdBy       String?     @map("created_by")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  creator         User?       @relation("CreatedMaterials", fields: [createdBy], references: [id])
+  asesmen         Asesmen[]
+  progress        ProgressPembelajaran[]
+  feedback        FeedbackSiswa[]
+
+  @@index([tingkatKesulitan])
+  @@index([kategori])
+  @@map("materi_bacaan")
+}
+
+// Gaze Tracking
+model DataGazeTracking {
+  id              String      @id @default(uuid())
+  asesmenId       String      @map("asesmen_id")
+  timestampMs     BigInt      @map("timestamp_ms")
+  xCoordinate     Decimal?    @map("x_coordinate") @db.Decimal(10, 4)
+  yCoordinate     Decimal?    @map("y_coordinate") @db.Decimal(10, 4)
+  fixationDurationMs Int?     @map("fixation_duration_ms")
+  saccadeLength   Decimal?    @map("saccade_length") @db.Decimal(10, 4)
+  wordIndex       Int?        @map("word_index")
+  isRegression    Boolean?    @map("is_regression")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  asesmen         Asesmen     @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+
+  @@index([asesmenId])
+  @@index([timestampMs])
+  @@map("data_gaze_tracking")
+}
+
+model AnalisisGaze {
+  id              String      @id @default(uuid())
+  asesmenId       String      @unique @map("asesmen_id")
+  avgFixationDurationMs Decimal? @map("avg_fixation_duration_ms") @db.Decimal(10, 2)
+  totalFixations  Int?        @map("total_fixations")
+  totalSaccades   Int?        @map("total_saccades")
+  regressionCount Int?        @map("regression_count")
+  readingSpeedWpm Decimal?    @map("reading_speed_wpm") @db.Decimal(10, 2)
+  focusScore      Decimal?    @map("focus_score") @db.Decimal(5, 2)
+  difficultyIndicators Json?   @map("difficulty_indicators")
+  heatMapData     Json?       @map("heat_map_data")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  asesmen         Asesmen     @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+
+  @@index([asesmenId])
+  @@map("analisis_gaze")
+}
+
+// Speech Analysis
+model RekamanSuara {
+  id              String      @id @default(uuid())
+  asesmenId       String      @map("asesmen_id")
+  audioFileUrl    String      @map("audio_file_url")
+  durationSeconds Decimal?    @map("duration_seconds") @db.Decimal(10, 2)
+  fileSizeBytes   BigInt?     @map("file_size_bytes")
+  format          String?
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  asesmen         Asesmen     @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+  analisisSuara   AnalisisSuara?
+
+  @@index([asesmenId])
+  @@map("rekaman_suara")
+}
+
+model AnalisisSuara {
+  id              String      @id @default(uuid())
+  asesmenId       String      @unique @map("asesmen_id")
+  rekamanId       String?     @unique @map("rekaman_id")
+  transcription   String?
+  expectedText    String?     @map("expected_text")
+  accuracyScore   Decimal?    @map("accuracy_score") @db.Decimal(5, 2)
+  fluencyScore    Decimal?    @map("fluency_score") @db.Decimal(5, 2)
+  pronunciationErrors Json?    @map("pronunciation_errors")
+  pausePatterns   Json?       @map("pause_patterns")
+  readingSpeedWpm Decimal?    @map("reading_speed_wpm") @db.Decimal(10, 2)
+  totalWords      Int?        @map("total_words")
+  correctWords    Int?        @map("correct_words")
+  mispronuncedWords Int?      @map("mispronounced_words")
+  omittedWords    Int?        @map("omitted_words")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  asesmen         Asesmen     @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+  rekaman         RekamanSuara? @relation(fields: [rekamanId], references: [id])
+
+  @@index([asesmenId])
+  @@map("analisis_suara")
+}
+
+// Profiling & Assessment
+model ProfilKesulitan {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  asesmenId       String?     @map("asesmen_id")
+  overallDifficultyScore Decimal? @map("overall_difficulty_score") @db.Decimal(5, 2)
+  readingLevel    String?     @map("reading_level")
+  dyslexiaRiskScore Decimal?  @map("dyslexia_risk_score") @db.Decimal(5, 2)
+  phonemeAwarenessScore Decimal? @map("phoneme_awareness_score") @db.Decimal(5, 2)
+  syllableAwarenessScore Decimal? @map("syllable_awareness_score") @db.Decimal(5, 2)
+  rhymeAwarenessScore Decimal? @map("rhyme_awareness_score") @db.Decimal(5, 2)
+  kesulitanFonologi Json?     @map("kesulitan_fonologi")
+  polaKesalahan   Json?       @map("pola_kesalahan")
+  areaKekuatan    Json?       @map("area_kekuatan")
+  rekomendasi     Json?
+  targetPembelajaran Json?    @map("target_pembelajaran")
+  isCurrent       Boolean     @default(true) @map("is_current")
+  profiledAt      DateTime    @default(now()) @map("profiled_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  asesmen         Asesmen?    @relation(fields: [asesmenId], references: [id])
+  rekomendasiList RekomendasiPembelajaran[]
+
+  @@index([siswaId])
+  @@index([siswaId, isCurrent])
+  @@map("profil_kesulitan")
+}
+
+model HasilAsesmen {
+  id              String      @id @default(uuid())
+  asesmenId       String      @unique @map("asesmen_id")
+  siswaId         String      @map("siswa_id")
+  overallScore    Decimal?    @map("overall_score") @db.Decimal(5, 2)
+  gazeScore       Decimal?    @map("gaze_score") @db.Decimal(5, 2)
+  speechScore     Decimal?    @map("speech_score") @db.Decimal(5, 2)
+  comprehensionScore Decimal? @map("comprehension_score") @db.Decimal(5, 2)
+  completionTimeSeconds Int?  @map("completion_time_seconds")
+  wordsRead       Int?        @map("words_read")
+  wordsPerMinute  Decimal?    @map("words_per_minute") @db.Decimal(10, 2)
+  detailedResults Json?       @map("detailed_results")
+  strengths       String[]
+  weaknesses      String[]
+  recommendations String[]
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  asesmen         Asesmen     @relation(fields: [asesmenId], references: [id], onDelete: Cascade)
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+
+  @@index([asesmenId])
+  @@index([siswaId])
+  @@map("hasil_asesmen")
+}
+
+// Learning & Recommendations
+model RekomendasiPembelajaran {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  profilId        String?     @map("profil_id")
+  tipeRekomendasi String?     @map("tipe_rekomendasi")
+  prioritas       Int?
+  materiIds       String[]    @map("materi_ids")
+  latihanIds      String[]    @map("latihan_ids")
+  tingkatKesulitanSaran DifficultyLevel? @map("tingkat_kesulitan_saran")
+  durasiSaranMenit Int?       @map("durasi_saran_menit")
+  frekuensiSaran  String?     @map("frekuensi_saran")
+  deskripsi       String?
+  alasan          String?
+  targetKemampuan String[]    @map("target_kemampuan")
+  status          String?
+  dimulaiPada     DateTime?   @map("dimulai_pada")
+  diselesaikanPada DateTime?  @map("diselesaikan_pada")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  profil          ProfilKesulitan? @relation(fields: [profilId], references: [id])
+
+  @@index([siswaId])
+  @@index([status])
+  @@map("rekomendasi_pembelajaran")
+}
+
+model ProgressPembelajaran {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  materiId        String?     @map("materi_id")
+  latihanId       String?     @map("latihan_id")
+  status          String?
+  completionPercentage Decimal? @map("completion_percentage") @db.Decimal(5, 2)
+  skorTerakhir    Decimal?    @map("skor_terakhir") @db.Decimal(5, 2)
+  waktuYangDihabiskanMenit Int? @map("waktu_yang_dihabiskan_menit")
+  jumlahPercobaan Int?        @map("jumlah_percobaan")
+  performaHistory Json?       @map("performa_history")
+  kesalahanUmum   Json?       @map("kesalahan_umum")
+  lastAccessedAt  DateTime?   @map("last_accessed_at")
+  completedAt     DateTime?   @map("completed_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  materi          MateriaBacaan? @relation(fields: [materiId], references: [id])
+
+  @@index([siswaId])
+  @@index([materiId])
+  @@map("progress_pembelajaran")
+}
+
+// Interventions
+model Intervensi {
+  id              String      @id @default(uuid())
+  guruId          String?     @map("guru_id")
+  siswaId         String      @map("siswa_id")
+  judul           String
+  deskripsi       String?
+  tipeIntervensi  String?     @map("tipe_intervensi")
+  materiKhusus    Json?       @map("materi_khusus")
+  aktivitas       Json?
+  targetKemampuan String[]    @map("target_kemampuan")
+  tanggalMulai    DateTime?   @map("tanggal_mulai") @db.Date
+  tanggalSelesai  DateTime?   @map("tanggal_selesai") @db.Date
+  frekuensi       String?
+  durasiPerSesiMenit Int?     @map("durasi_per_sesi_menit")
+  status          String?
+  progressNotes   String?     @map("progress_notes")
+  efektivitasScore Decimal?   @map("efektivitas_score") @db.Decimal(5, 2)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  guru            Guru?       @relation(fields: [guruId], references: [id], onDelete: SetNull)
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+
+  @@index([guruId])
+  @@index([siswaId])
+  @@index([status])
+  @@map("intervensi")
+}
+
+// Feedback & Communication
+model FeedbackSiswa {
+  id              String      @id @default(uuid())
+  siswaId         String      @map("siswa_id")
+  materiId        String?     @map("materi_id")
+  latihanId       String?     @map("latihan_id")
+  rating          Int?
+  komentar        String?
+  kesulitanYangDialami String? @map("kesulitan_yang_dialami")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  siswa           Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  materi          MateriaBacaan? @relation(fields: [materiId], references: [id])
+
+  @@index([siswaId])
+  @@map("feedback_siswa")
+}
+
+model Pesan {
+  id              String      @id @default(uuid())
+  pengirimId      String?     @map("pengirim_id")
+  penerimaId      String?     @map("penerima_id")
+  subjek          String?
+  isi             String
+  isRead          Boolean     @default(false) @map("is_read")
+  readAt          DateTime?   @map("read_at")
+  parentMessageId String?     @map("parent_message_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  pengirim        User?       @relation("SentMessages", fields: [pengirimId], references: [id], onDelete: SetNull)
+  penerima        User?       @relation("ReceivedMessages", fields: [penerimaId], references: [id], onDelete: SetNull)
+  parentMessage   Pesan?      @relation("MessageReplies", fields: [parentMessageId], references: [id])
+  replies         Pesan[]     @relation("MessageReplies")
+
+  @@index([pengirimId])
+  @@index([penerimaId])
+  @@index([penerimaId, isRead])
+  @@map("pesan")
+}
+
+// System & Analytics
+model Notification {
+  id              String      @id @default(uuid())
+  userId          String      @map("user_id")
+  type            String?
+  title           String
+  message         String
+  link            String?
+  isRead          Boolean     @default(false) @map("is_read")
+  readAt          DateTime?   @map("read_at")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id              String      @id @default(uuid())
+  userId          String?     @map("user_id")
+  action          String
+  entityType      String?     @map("entity_type")
+  entityId        String?     @map("entity_id")
+  oldValues       Json?       @map("old_values")
+  newValues       Json?       @map("new_values")
+  ipAddress       String?     @map("ip_address")
+  userAgent       String?     @map("user_agent")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user            User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model AnalyticsKelas {
+  id              String      @id @default(uuid())
+  guruId          String      @map("guru_id")
+  kelas           String
+  periodeMulai    DateTime    @map("periode_mulai") @db.Date
+  periodeSelesai  DateTime    @map("periode_selesai") @db.Date
+  totalSiswa      Int?        @map("total_siswa")
+  rataRataSkor    Decimal?    @map("rata_rata_skor") @db.Decimal(5, 2)
+  siswaBerisiko   Int?        @map("siswa_berisiko")
+  tingkatPenyelesaian Decimal? @map("tingkat_penyelesaian") @db.Decimal(5, 2)
+  detailedMetrics Json?       @map("detailed_metrics")
+  generatedAt     DateTime    @default(now()) @map("generated_at")
+
+  // Relations
+  guru            Guru        @relation(fields: [guruId], references: [id], onDelete: Cascade)
+
+  @@map("analytics_kelas")
+}
+
+model MonitoringOrangTua {
+  id              String      @id @default(uuid())
+  orangTuaId      String      @map("orang_tua_id")
+  siswaId         String      @map("siswa_id")
+  tanggal         DateTime    @db.Date
+  aktivitasHariIni Json?      @map("aktivitas_hari_ini")
+  waktuBelajarMenit Int?      @map("waktu_belajar_menit")
+  latihanDiselesaikan Int?    @map("latihan_diselesaikan")
+  skorRataRata    Decimal?    @map("skor_rata_rata") @db.Decimal(5, 2)
+  alerts          Json?
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  orangTua        OrangTua    @relation(fields: [orangTuaId], references: [id], onDelete: Cascade)
+
+  @@index([orangTuaId, tanggal])
+  @@map("monitoring_orang_tua")
+}
