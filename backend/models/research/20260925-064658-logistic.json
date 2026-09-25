@@ -1,0 +1,1618 @@
+{
+  "id": "20260925-064658-logistic",
+  "algorithm": "logistic",
+  "model_name": "Logistic Regression",
+  "version": "20260925-064658",
+  "created_at": "2026-09-25T06:46:58.817485+00:00",
+  "samples": 210,
+  "participants": 70,
+  "features": [
+    "n_fix_trial",
+    "sum_fix_dur_trial",
+    "dwell_time_trial",
+    "mean_fix_dur_trial",
+    "n_sacc_trial",
+    "mean_sacc_dur_trial",
+    "mean_sacc_ampl_trial",
+    "n_between_line_regress_trial",
+    "n_within_line_regress_trial",
+    "n_regress_trial",
+    "n_progress_trial",
+    "avg_dwell_time_aoi",
+    "avg_n_fix_aoi",
+    "avg_mean_fix_dur_aoi",
+    "avg_skipped_aoi",
+    "avg_n_revisits_aoi"
+  ],
+  "accuracy": 0.7714,
+  "macro_f1": 0.7704,
+  "baseline_macro_f1": 0.3333,
+  "baseline_accuracy": 0.5,
+  "confusion_matrix": [
+    [
+      88,
+      17
+    ],
+    [
+      31,
+      74
+    ]
+  ],
+  "folds": [
+    {
+      "fold": 1,
+      "train_participants": 56,
+      "test_participants": 14,
+      "overlap": 0,
+      "macro_f1": 0.8325
+    },
+    {
+      "fold": 2,
+      "train_participants": 56,
+      "test_participants": 14,
+      "overlap": 0,
+      "macro_f1": 0.8091
+    },
+    {
+      "fold": 3,
+      "train_participants": 56,
+      "test_participants": 14,
+      "overlap": 0,
+      "macro_f1": 0.8332
+    },
+    {
+      "fold": 4,
+      "train_participants": 56,
+      "test_participants": 14,
+      "overlap": 0,
+      "macro_f1": 0.5837
+    },
+    {
+      "fold": 5,
+      "train_participants": 56,
+      "test_participants": 14,
+      "overlap": 0,
+      "macro_f1": 0.7856
+    }
+  ],
+  "feature_importance": [
+    {
+      "feature": "mean_fix_dur_trial",
+      "value": 0.3909
+    },
+    {
+      "feature": "avg_n_fix_aoi",
+      "value": 0.3782
+    },
+    {
+      "feature": "mean_sacc_dur_trial",
+      "value": 0.3626
+    },
+    {
+      "feature": "avg_n_revisits_aoi",
+      "value": 0.3366
+    },
+    {
+      "feature": "mean_sacc_ampl_trial",
+      "value": 0.3314
+    },
+    {
+      "feature": "n_within_line_regress_trial",
+      "value": 0.3276
+    },
+    {
+      "feature": "n_regress_trial",
+      "value": 0.3276
+    },
+    {
+      "feature": "avg_dwell_time_aoi",
+      "value": 0.3091
+    },
+    {
+      "feature": "n_progress_trial",
+      "value": 0.2736
+    },
+    {
+      "feature": "dwell_time_trial",
+      "value": 0.1988
+    },
+    {
+      "feature": "sum_fix_dur_trial",
+      "value": 0.1957
+    },
+    {
+      "feature": "n_fix_trial",
+      "value": 0.1892
+    },
+    {
+      "feature": "n_sacc_trial",
+      "value": 0.1892
+    },
+    {
+      "feature": "avg_mean_fix_dur_aoi",
+      "value": 0.1841
+    },
+    {
+      "feature": "avg_skipped_aoi",
+      "value": 0.0791
+    },
+    {
+      "feature": "n_between_line_regress_trial",
+      "value": 0.0
+    }
+  ],
+  "evaluation": "5-fold StratifiedGroupKFold, dipisah berdasarkan peserta; preprocessing dipelajari hanya dari fold pelatihan.",
+  "dataset": "ETDD70 v2",
+  "oof": [
+    {
+      "subject_id": "1003",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3753
+    },
+    {
+      "subject_id": "1003",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1189
+    },
+    {
+      "subject_id": "1003",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4207
+    },
+    {
+      "subject_id": "1009",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6539
+    },
+    {
+      "subject_id": "1009",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.1604
+    },
+    {
+      "subject_id": "1009",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4238
+    },
+    {
+      "subject_id": "1016",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4468
+    },
+    {
+      "subject_id": "1016",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2473
+    },
+    {
+      "subject_id": "1016",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6663
+    },
+    {
+      "subject_id": "1019",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1979
+    },
+    {
+      "subject_id": "1019",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3796
+    },
+    {
+      "subject_id": "1019",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.7048
+    },
+    {
+      "subject_id": "1021",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3663
+    },
+    {
+      "subject_id": "1021",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3048
+    },
+    {
+      "subject_id": "1021",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5098
+    },
+    {
+      "subject_id": "1033",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1456
+    },
+    {
+      "subject_id": "1033",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.0724
+    },
+    {
+      "subject_id": "1033",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3105
+    },
+    {
+      "subject_id": "1038",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8662
+    },
+    {
+      "subject_id": "1038",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8712
+    },
+    {
+      "subject_id": "1038",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9304
+    },
+    {
+      "subject_id": "1040",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.5731
+    },
+    {
+      "subject_id": "1040",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1852
+    },
+    {
+      "subject_id": "1040",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.7591
+    },
+    {
+      "subject_id": "1058",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6368
+    },
+    {
+      "subject_id": "1058",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3575
+    },
+    {
+      "subject_id": "1058",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2367
+    },
+    {
+      "subject_id": "1065",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4955
+    },
+    {
+      "subject_id": "1065",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.262
+    },
+    {
+      "subject_id": "1065",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6039
+    },
+    {
+      "subject_id": "1073",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3066
+    },
+    {
+      "subject_id": "1073",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.223
+    },
+    {
+      "subject_id": "1073",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4442
+    },
+    {
+      "subject_id": "1075",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1905
+    },
+    {
+      "subject_id": "1075",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1885
+    },
+    {
+      "subject_id": "1075",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6166
+    },
+    {
+      "subject_id": "1082",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4494
+    },
+    {
+      "subject_id": "1082",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.7653
+    },
+    {
+      "subject_id": "1082",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9861
+    },
+    {
+      "subject_id": "1090",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3164
+    },
+    {
+      "subject_id": "1090",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.181
+    },
+    {
+      "subject_id": "1090",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4051
+    },
+    {
+      "subject_id": "1095",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1446
+    },
+    {
+      "subject_id": "1095",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1719
+    },
+    {
+      "subject_id": "1095",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.5118
+    },
+    {
+      "subject_id": "1109",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1668
+    },
+    {
+      "subject_id": "1109",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1478
+    },
+    {
+      "subject_id": "1109",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1776
+    },
+    {
+      "subject_id": "1113",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4446
+    },
+    {
+      "subject_id": "1113",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.29
+    },
+    {
+      "subject_id": "1113",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.903
+    },
+    {
+      "subject_id": "1115",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.2072
+    },
+    {
+      "subject_id": "1115",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.1657
+    },
+    {
+      "subject_id": "1115",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.267
+    },
+    {
+      "subject_id": "1134",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5889
+    },
+    {
+      "subject_id": "1134",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5489
+    },
+    {
+      "subject_id": "1134",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9854
+    },
+    {
+      "subject_id": "1145",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2171
+    },
+    {
+      "subject_id": "1145",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1858
+    },
+    {
+      "subject_id": "1145",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.5126
+    },
+    {
+      "subject_id": "1160",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1175
+    },
+    {
+      "subject_id": "1160",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.131
+    },
+    {
+      "subject_id": "1160",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4119
+    },
+    {
+      "subject_id": "1166",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6942
+    },
+    {
+      "subject_id": "1166",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9054
+    },
+    {
+      "subject_id": "1166",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.992
+    },
+    {
+      "subject_id": "1169",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1704
+    },
+    {
+      "subject_id": "1169",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1019
+    },
+    {
+      "subject_id": "1169",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.233
+    },
+    {
+      "subject_id": "1174",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4112
+    },
+    {
+      "subject_id": "1174",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3604
+    },
+    {
+      "subject_id": "1174",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.7324
+    },
+    {
+      "subject_id": "1186",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2953
+    },
+    {
+      "subject_id": "1186",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1049
+    },
+    {
+      "subject_id": "1186",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2634
+    },
+    {
+      "subject_id": "1187",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1302
+    },
+    {
+      "subject_id": "1187",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.0602
+    },
+    {
+      "subject_id": "1187",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3331
+    },
+    {
+      "subject_id": "1189",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3337
+    },
+    {
+      "subject_id": "1189",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1191
+    },
+    {
+      "subject_id": "1189",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.5792
+    },
+    {
+      "subject_id": "1209",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3556
+    },
+    {
+      "subject_id": "1209",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.0849
+    },
+    {
+      "subject_id": "1209",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.395
+    },
+    {
+      "subject_id": "1235",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2133
+    },
+    {
+      "subject_id": "1235",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1352
+    },
+    {
+      "subject_id": "1235",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3364
+    },
+    {
+      "subject_id": "1254",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3266
+    },
+    {
+      "subject_id": "1254",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2323
+    },
+    {
+      "subject_id": "1254",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.747
+    },
+    {
+      "subject_id": "1255",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.181
+    },
+    {
+      "subject_id": "1255",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3385
+    },
+    {
+      "subject_id": "1255",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4595
+    },
+    {
+      "subject_id": "1257",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2211
+    },
+    {
+      "subject_id": "1257",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2251
+    },
+    {
+      "subject_id": "1257",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.7176
+    },
+    {
+      "subject_id": "1258",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2009
+    },
+    {
+      "subject_id": "1258",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.164
+    },
+    {
+      "subject_id": "1258",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.67
+    },
+    {
+      "subject_id": "1263",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6224
+    },
+    {
+      "subject_id": "1263",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4673
+    },
+    {
+      "subject_id": "1263",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.6072
+    },
+    {
+      "subject_id": "1271",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2404
+    },
+    {
+      "subject_id": "1271",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.0788
+    },
+    {
+      "subject_id": "1271",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3487
+    },
+    {
+      "subject_id": "1274",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2467
+    },
+    {
+      "subject_id": "1274",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1326
+    },
+    {
+      "subject_id": "1274",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2919
+    },
+    {
+      "subject_id": "1284",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1775
+    },
+    {
+      "subject_id": "1284",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2979
+    },
+    {
+      "subject_id": "1284",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.5592
+    },
+    {
+      "subject_id": "1300",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8439
+    },
+    {
+      "subject_id": "1300",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8945
+    },
+    {
+      "subject_id": "1300",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9966
+    },
+    {
+      "subject_id": "1312",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8567
+    },
+    {
+      "subject_id": "1312",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3244
+    },
+    {
+      "subject_id": "1312",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9305
+    },
+    {
+      "subject_id": "1314",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1743
+    },
+    {
+      "subject_id": "1314",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1129
+    },
+    {
+      "subject_id": "1314",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3561
+    },
+    {
+      "subject_id": "1318",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3797
+    },
+    {
+      "subject_id": "1318",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.367
+    },
+    {
+      "subject_id": "1318",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 1,
+      "probability": 0.9133
+    },
+    {
+      "subject_id": "1322",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3313
+    },
+    {
+      "subject_id": "1322",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2664
+    },
+    {
+      "subject_id": "1322",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3792
+    },
+    {
+      "subject_id": "1345",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3153
+    },
+    {
+      "subject_id": "1345",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.0512
+    },
+    {
+      "subject_id": "1345",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1624
+    },
+    {
+      "subject_id": "1349",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.385
+    },
+    {
+      "subject_id": "1349",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4009
+    },
+    {
+      "subject_id": "1349",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8514
+    },
+    {
+      "subject_id": "1350",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8311
+    },
+    {
+      "subject_id": "1350",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.826
+    },
+    {
+      "subject_id": "1350",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9847
+    },
+    {
+      "subject_id": "1377",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2339
+    },
+    {
+      "subject_id": "1377",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1357
+    },
+    {
+      "subject_id": "1377",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4376
+    },
+    {
+      "subject_id": "1380",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.3943
+    },
+    {
+      "subject_id": "1380",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.1579
+    },
+    {
+      "subject_id": "1380",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4577
+    },
+    {
+      "subject_id": "1398",
+      "task": "T1_Syllables",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.2898
+    },
+    {
+      "subject_id": "1398",
+      "task": "T4_Meaningful_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.08
+    },
+    {
+      "subject_id": "1398",
+      "task": "T5_Pseudo_Text",
+      "label": 0,
+      "prediction": 0,
+      "probability": 0.4405
+    },
+    {
+      "subject_id": "1405",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4816
+    },
+    {
+      "subject_id": "1405",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5117
+    },
+    {
+      "subject_id": "1405",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8234
+    },
+    {
+      "subject_id": "1417",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.299
+    },
+    {
+      "subject_id": "1417",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.2364
+    },
+    {
+      "subject_id": "1417",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5566
+    },
+    {
+      "subject_id": "1421",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6286
+    },
+    {
+      "subject_id": "1421",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.754
+    },
+    {
+      "subject_id": "1421",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9881
+    },
+    {
+      "subject_id": "1459",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.897
+    },
+    {
+      "subject_id": "1459",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6942
+    },
+    {
+      "subject_id": "1459",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9996
+    },
+    {
+      "subject_id": "1476",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.844
+    },
+    {
+      "subject_id": "1476",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9198
+    },
+    {
+      "subject_id": "1476",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9031
+    },
+    {
+      "subject_id": "1571",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6997
+    },
+    {
+      "subject_id": "1571",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3791
+    },
+    {
+      "subject_id": "1571",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9344
+    },
+    {
+      "subject_id": "1582",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.511
+    },
+    {
+      "subject_id": "1582",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.7282
+    },
+    {
+      "subject_id": "1582",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9807
+    },
+    {
+      "subject_id": "1591",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.512
+    },
+    {
+      "subject_id": "1591",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4293
+    },
+    {
+      "subject_id": "1591",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9053
+    },
+    {
+      "subject_id": "1626",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4292
+    },
+    {
+      "subject_id": "1626",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4476
+    },
+    {
+      "subject_id": "1626",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5029
+    },
+    {
+      "subject_id": "1693",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.617
+    },
+    {
+      "subject_id": "1693",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.5581
+    },
+    {
+      "subject_id": "1693",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9596
+    },
+    {
+      "subject_id": "1729",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9903
+    },
+    {
+      "subject_id": "1729",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9996
+    },
+    {
+      "subject_id": "1729",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9996
+    },
+    {
+      "subject_id": "1744",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.2509
+    },
+    {
+      "subject_id": "1744",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3358
+    },
+    {
+      "subject_id": "1744",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6926
+    },
+    {
+      "subject_id": "1760",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3384
+    },
+    {
+      "subject_id": "1760",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4822
+    },
+    {
+      "subject_id": "1760",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6701
+    },
+    {
+      "subject_id": "1858",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9566
+    },
+    {
+      "subject_id": "1858",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9975
+    },
+    {
+      "subject_id": "1858",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 1.0
+    },
+    {
+      "subject_id": "1859",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9812
+    },
+    {
+      "subject_id": "1859",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9932
+    },
+    {
+      "subject_id": "1859",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9999
+    },
+    {
+      "subject_id": "1869",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.1578
+    },
+    {
+      "subject_id": "1869",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.2197
+    },
+    {
+      "subject_id": "1869",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.4868
+    },
+    {
+      "subject_id": "1879",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8558
+    },
+    {
+      "subject_id": "1879",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.7102
+    },
+    {
+      "subject_id": "1879",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9435
+    },
+    {
+      "subject_id": "1903",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8462
+    },
+    {
+      "subject_id": "1903",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9417
+    },
+    {
+      "subject_id": "1903",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9996
+    },
+    {
+      "subject_id": "1913",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.7573
+    },
+    {
+      "subject_id": "1913",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6239
+    },
+    {
+      "subject_id": "1913",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9792
+    },
+    {
+      "subject_id": "1929",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9019
+    },
+    {
+      "subject_id": "1929",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8982
+    },
+    {
+      "subject_id": "1929",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.9942
+    },
+    {
+      "subject_id": "1993",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6171
+    },
+    {
+      "subject_id": "1993",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.2954
+    },
+    {
+      "subject_id": "1993",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6847
+    },
+    {
+      "subject_id": "1996",
+      "task": "T1_Syllables",
+      "label": 1,
+      "prediction": 0,
+      "probability": 0.3812
+    },
+    {
+      "subject_id": "1996",
+      "task": "T4_Meaningful_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.6901
+    },
+    {
+      "subject_id": "1996",
+      "task": "T5_Pseudo_Text",
+      "label": 1,
+      "prediction": 1,
+      "probability": 0.8555
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+import { createContext,useContext,useEffect,useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Dialog,DialogContent,DialogTitle,DialogDescription } from './ui/dialog';
+import { LogIn,ArrowRight } from 'lucide-react';
+import { api,message } from '../lib/api';
+import { Action } from './Common';
+const AuthContext=createContext();
+export const useAuth=()=>useContext(AuthContext);
+export const AuthProvider=({children})=>{
+ const [user,setUser]=useState(null),[open,setOpen]=useState(false),[register,setRegister]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[ready,setReady]=useState(false);
+ const navigate=useNavigate();
+ useEffect(()=>{if(sessionStorage.getItem('cortexia-token'))api.get('/auth/me').then(r=>setUser(r.data)).catch(()=>sessionStorage.removeItem('cortexia-token')).finally(()=>setReady(true));else setReady(true);},[]);
+ const submit=async e=>{e.preventDefault();setBusy(true);setError('');const data=Object.fromEntries(new FormData(e.target));try{const r=await api.post(`/auth/${register?'register':'login'}`,data);sessionStorage.setItem('cortexia-token',r.data.token);setUser(r.data.user);setOpen(false);}catch(e){setError(message(e));}finally{setBusy(false);}};
+ const logout=async()=>{try{await api.post('/auth/logout');}finally{sessionStorage.removeItem('cortexia-token');setUser(null);navigate('/');}};
+ return <AuthContext.Provider value={{user,ready,login:()=>{setError('');setOpen(true);},logout}}>{children}<Dialog open={open} onOpenChange={setOpen}><DialogContent className="auth-dialog" data-testid="auth-modal"><img src="/assets/logo.png" alt="CORTEXIA" className="auth-logo"/><DialogTitle>{register?'Mulai perjalanan bersama CORTI':'Senang bertemu lagi!'}</DialogTitle><DialogDescription>{register?'Buat akun untuk menyimpan perjalanan belajarmu.':'Masuk untuk melanjutkan perjalanan belajarmu.'}</DialogDescription><form onSubmit={submit} className="form-stack">{register&&<><label>Nama panggilan<input data-testid="register-name" name="name" required minLength={2} maxLength={80} placeholder="Nama kamu"/></label><label>Saya adalah<select name="role" data-testid="register-role"><option value="teacher">Guru / pendamping</option><option value="student">Pelajar</option></select></label></>}<label>Email<input data-testid="auth-email" type="email" name="email" required autoComplete="email" placeholder="nama@email.com"/></label><label>Kata sandi<input data-testid="auth-password" type="password" name="password" minLength={8} maxLength={72} required autoComplete={register?'new-password':'current-password'} placeholder="Minimal 8 karakter"/></label>{error&&<p role="alert" className="error" data-testid="auth-error">{error}</p>}<Action data-testid="auth-submit" busy={busy} type="submit">{register?'Buat akun':'Masuk'}<ArrowRight size={18}/></Action></form><button className="text-button" data-testid="auth-switch" onClick={()=>{setRegister(!register);setError('');}}>{register?'Sudah punya akun? Masuk':'Belum punya akun? Daftar sekarang'}</button></DialogContent></Dialog></AuthContext.Provider>;
+};
+export const RequireAuth=({children})=>{const {user,login,ready}=useAuth();if(!ready)return null;return user?children:<section className="auth-gate"><img src="/assets/corti.png" alt="CORTI"/><h1 data-testid="signin-title">Petualanganmu menanti!</h1><p data-testid="signin-description">Masuk untuk menyimpan sesi dan perkembangan belajarmu.</p><Action data-testid="open-login" onClick={login}><LogIn size={18}/> Masuk / buat akun</Action></section>;};

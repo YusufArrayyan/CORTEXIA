@@ -1,0 +1,48 @@
+{
+  "summary": "Completed backend+frontend integration testing against public URL. Pytest suite passed (18/18) covering health/auth/authorization/ownership/sessions/speech/pronunciation/games/research; UI critical flows passed for teacher+student roles, responsive widths, and key navigation.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Calibration overlay",
+        "issues": [
+          "Localized error copy mixed language ('La cámara ...') instead of consistent Indonesian wording"
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_api_integration.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix mixed-language calibration error copy for localization consistency",
+    "Populate /app/memory/test_credentials.md with shared non-production test credentials/process for future agents"
+  ],
+  "critical_code_review_comments": [
+    "No hardcoded paid AI service found; local ASR/TTS paths are used as required",
+    "Ownership guards validated for students/texts/sessions across different users",
+    "Webcam gaze quality and real-world accuracy remain hardware-dependent and cannot be conclusively validated via automation"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_api_integration.py",
+    "/app/scripts/cleanup_test_data.py",
+    "/app/test_reports/iteration_1.json",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "95%"
+  },
+  "test_credentials": "Missing reusable credentials in /app/memory/test_credentials.md (file contains only placeholder comments). Temporary accounts were created and then removed.",
+  "seed_data_creation": "Created temporary teacher/student accounts and teacher-owned test entities; all cleaned. Deleted test users: 006c5339-1f48-4304-9257-cfb78ce91983, dfdc0a1a-399d-4b94-bd0d-ac04064c8a32, 67e074d5-fc64-4d27-b27c-d0e8829515a6, 9cc8b52c-5a0d-46f1-9491-e1280e77166e, 49d23b62-01dc-45f8-ab73-9d55fe4ccefd. Removed test model directory /app/backend/models/research/006c5339-1f48-4304-9257-cfb78ce91983.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Public URL responsive checks passed at 1920/390/360 widths with no horizontal overflow. Backend regression test file is reusable for future runs. Baseline research model files remain intact.",
+  "rca of the issue": "Initial pytest run failed due invalid reserved email domain used in tests (@mail.test), not app logic. Updated test data to valid emails (@example.com); rerun passed 18/18."
+}
