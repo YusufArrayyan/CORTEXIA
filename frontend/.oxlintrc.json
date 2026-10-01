@@ -1,0 +1,21 @@
+{
+  "ignorePatterns": [
+    "frontend/public/webgazer.js",
+    "**/build/**",
+    "**/node_modules/**"
+  ],
+  "globals": {
+    "OIndexedDB": "readonly",
+    "mozIndexedDB": "readonly",
+    "webkitIndexedDB": "readonly",
+    "msIndexedDB": "readonly",
+    "openDatabase": "readonly",
+    "BlobBuilder": "readonly",
+    "MozBlobBuilder": "readonly",
+    "WebKitBlobBuilder": "readonly",
+    "MSBlobBuilder": "readonly",
+    "importScripts": "readonly",
+    "Module": "readonly",
+    "createMediapipeSolutionsWasm": "readonly"
+  }
+}
