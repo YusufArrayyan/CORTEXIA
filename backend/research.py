@@ -40,6 +40,7 @@ async def import_csv(background:BackgroundTasks,file:UploadFile=File(...),user=D
     if jobs.get(user['id'],{}).get('status')=='running':raise HTTPException(409,'Pelatihan masih berlangsung.')
     raw=await file.read(5*1024*1024+1)
     if len(raw)>5*1024*1024:raise HTTPException(413,'CSV maksimal 5 MB.')
+    f=None
     try:
         f=pd.read_csv(io.BytesIO(raw));required={'subject_id','label'}
         if not required.issubset(f.columns):raise ValueError('CSV wajib memiliki kolom subject_id, label (0/1), dan fitur numerik.')
