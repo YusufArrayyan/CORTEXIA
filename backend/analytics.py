@@ -61,7 +61,7 @@ def analyze(reference,transcript,duration,points,calibration,words):
     m['pauses']=len(pauses) if words else None;m['pause_seconds']=round(sum(pauses),2) if words else None
     enough=speech and duration>=5 and len(normalize(transcript).split())>=3
     quality='layak' if enough and m['gaze_usable'] else 'parsial' if enough or m['gaze_usable'] else 'tidak_cukup'
-    recommendations=[]
+    recommendations=[];profile='Lanjutkan eksplorasi'
     if quality=='tidak_cukup':profile='Data belum cukup';recommendations.append('Ulangi sesi di tempat tenang dengan suara jelas dan pencahayaan merata.')
     elif enough and m['wer']>20:profile='Latihan ketepatan kata';recommendations.append('Dengarkan dan ulangi kata yang ditandai, lalu baca kembali kalimatnya.')
     elif enough and m['wpm']<60:profile='Latihan kelancaran';recommendations.append('Baca ulang teks pendek dengan nyaman. Pendamping dapat memberi contoh ritme membaca.')

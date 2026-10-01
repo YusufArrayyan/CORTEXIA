@@ -86,3 +86,4 @@ android-sdk/
 backend/models/whisper/blobs/0c/0c4d8d814973160f53608ff0aa1618a90abbce9ed632bbc54930475ba82ce973
 assets/dataset.zip
 assets/dataset/ETDD70_v2/data.zip
+frontend/node_modules/.cache/default-development/0.pack
