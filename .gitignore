@@ -87,3 +87,6 @@ backend/models/whisper/blobs/0c/0c4d8d814973160f53608ff0aa1618a90abbce9ed632bbc5
 assets/dataset.zip
 assets/dataset/ETDD70_v2/data.zip
 frontend/node_modules/.cache/default-development/0.pack
+
+# Local tooling
+.claude/

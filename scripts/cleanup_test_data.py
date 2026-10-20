@@ -24,6 +24,7 @@ def main():
         re.compile(r"^test\.student\..+@example\.com$"),
         re.compile(r"^uitest\.teacher\..+@example\.com$"),
         re.compile(r"^uitest\.student\..+@example\.com$"),
+        re.compile(r"^rev\.teacher\..+@example\.com$"),
     ]
 
     users = list(db.users.find({"email": {"$in": []}}, {"_id": 0}))

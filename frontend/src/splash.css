@@ -1,0 +1,24 @@
+.splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#fbfaff;overflow:hidden;cursor:pointer}
+.splash-blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none}
+.splash-blob.orange{width:46vmax;height:46vmax;left:-14vmax;top:-16vmax;background:#ffdcc4}
+.splash-blob.blue{width:50vmax;height:50vmax;right:-18vmax;bottom:-20vmax;background:#dfdffb}
+.splash-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center}
+.splash-hero{position:relative;width:clamp(112px,24vw,150px);aspect-ratio:120/130}
+.splash-corti{position:relative;width:100%;height:100%;transform-origin:50% 100%}
+.splash-corti svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 14px 18px rgba(242,98,31,.28))}
+.splash-ripple{position:absolute;left:50%;bottom:-8px;width:120%;height:28%;margin-left:-60%;border:3px solid #fa702e;border-radius:50%;z-index:1;pointer-events:none}
+.splash-drop{position:absolute;left:50%;bottom:6px;border-radius:50%;z-index:3;pointer-events:none}
+.splash-word{display:flex;align-items:flex-start;font:900 clamp(42px,9vw,68px)/1 'Nunito',sans-serif;color:var(--ink);letter-spacing:.02em}
+.splash-word span{display:inline-block}
+.splash-mark{display:flex!important;align-items:center;gap:2px;margin:.02em 0 0 .1em}
+.splash-mark i{width:.2em;height:.2em;border-radius:50%;background:var(--orange)}
+.splash-mark svg{width:.3em;height:.3em;color:var(--yellow)}
+.splash-tag{font:800 clamp(12px,2.2vw,15px)/1 'Nunito',sans-serif;color:var(--blue);text-transform:uppercase;margin-top:-12px;padding-left:.32em}
+.splash-skip{position:absolute;bottom:32px;left:0;right:0;text-align:center;font:700 13px 'Nunito',sans-serif;color:var(--muted)}
+.splash-float{position:relative;z-index:2;width:100%;height:100%}
+.splash-sparkle{position:absolute;left:50%;top:45%;z-index:1;pointer-events:none}
+.splash-loading{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:6px}
+.splash-track{width:min(220px,60vw);height:8px;border-radius:99px;background:#ecebf2;overflow:hidden}
+.splash-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.splash-status{position:relative;width:min(320px,86vw);height:20px}
+.splash-status span{position:absolute;inset:0;font:700 14px/20px 'Nunito',sans-serif;color:var(--muted)}
