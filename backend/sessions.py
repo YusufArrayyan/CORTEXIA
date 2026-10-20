@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from core import db,uid,now,current_user,audit,Document
-from analytics import transcribe,analyze,align,normalize
+from analytics import transcribe,analyze,align,normalize,asr_ready
 
 router=APIRouter(tags=['sessions'])
 @router.get('/speech/synthesize')
@@ -58,6 +58,7 @@ async def audio_result(audio,reference=None):
     data=await audio.read(25*1024*1024+1)
     if len(data)>25*1024*1024:raise HTTPException(413,'Audio maksimal 25 MB.')
     if len(data)<100:raise HTTPException(422,'Rekaman audio kosong atau terlalu pendek.')
+    if not asr_ready():raise HTTPException(503,'Model transkripsi belum tersedia di server.')
     name=None
     try:
         with tempfile.NamedTemporaryFile(delete=False,suffix='.audio') as f:f.write(data);name=f.name
@@ -72,10 +73,17 @@ async def audio_result(audio,reference=None):
         return result
     except HTTPException:raise
     except Exception as e:
-        import logging;logging.exception('Local transcription failed')
+        import logging;logging.exception('Local transcription failed (%d bytes, %s)',len(data),audio.content_type)
         raise HTTPException(422,'Audio tidak dapat dianalisis. Periksa mikrofon atau format audio, lalu ulangi.') from e
     finally:
         if name and os.path.exists(name):os.unlink(name)
+
+async def session_speech(audio,reference):
+    """Sesi tetap tersimpan walau suara gagal dianalisis, agar hasil tatapan tetap muncul di halaman hasil."""
+    try:return await audio_result(audio,reference)
+    except HTTPException as e:
+        if e.status_code==413:raise
+        return {'transcript':'','words':[],'error':e.detail}
 
 @router.post('/sessions',response_model=Document)
 async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),user=Depends(current_user)):
@@ -86,13 +94,13 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
     student=await db.students.find_one({'id':data.student_id,'owner_id':user['id']},{'_id':0})
     text=await db.texts.find_one({'id':data.text_id,'owner_id':{'$in':['shared',user['id']]}},{'_id':0})
     if not student or not text:raise HTTPException(404,'Siswa atau materi tidak ditemukan.')
-    speech=await audio_result(audio,text['content'])
+    speech=await session_speech(audio,text['content']) if audio and audio.filename else {'transcript':'','words':[]}
     duration=speech.get('audio_duration',data.duration)
     points=[p.model_dump() for p in data.gaze_points]
     layouts=[l.model_dump() for l in data.layouts]
     calibration=data.calibration.model_dump()
-    result=analyze(text['content'],speech['transcript'],duration,points,calibration,speech['words'],layouts,speech.get('pronunciation'))
-    doc={'id':uid(),'owner_id':user['id'],'student_id':student['id'],'student_alias':student['alias'],'text_id':text['id'],'text_title':text['title'],'reference':text['content'],'duration':duration,'mode':data.mode,'transcript':speech['transcript'],'words':speech['words'],'speech_model':speech.get('model'),'gaze_points':points,'layouts':layouts,'calibration':calibration,**result,'created_at':now(),'consent_at':now(),'retention_days':30,'expires_at':datetime.now(timezone.utc)+timedelta(days=30),'reviews':[]}
+    result=analyze(text['content'],speech['transcript'],duration,points,calibration,speech['words'],layouts,speech.get('pronunciation'),speech_error=speech.get('error'))
+    doc={'id':uid(),'owner_id':user['id'],'student_id':student['id'],'student_alias':student['alias'],'text_id':text['id'],'text_title':text['title'],'reference':text['content'],'duration':duration,'mode':data.mode,'transcript':speech['transcript'],'words':speech['words'],'speech_model':speech.get('model'),'speech_error':speech.get('error'),'gaze_points':points,'layouts':layouts,'calibration':calibration,**result,'created_at':now(),'consent_at':now(),'retention_days':30,'expires_at':datetime.now(timezone.utc)+timedelta(days=30),'reviews':[]}
     await db.sessions.create_index('expires_at',expireAfterSeconds=0)
     await db.sessions.insert_one(doc.copy());await audit(user['id'],'create_session',doc['id'])
     return doc
@@ -114,7 +122,7 @@ async def review(id:str,data:Correction,user=Depends(current_user)):
     if user['role']!='teacher':raise HTTPException(403,'Koreksi hanya dapat dilakukan pendamping.')
     if not normalize(data.transcript):raise HTTPException(422,'Transkripsi tidak boleh kosong.')
     doc=await owned(id,user)
-    result=analyze(doc['reference'],data.transcript,doc['duration'],doc['gaze_points'],doc['calibration'],doc['words'],doc.get('layouts'),(doc.get('metrics') or {}).get('pronunciation'))
+    result=analyze(doc['reference'],data.transcript,doc['duration'],doc['gaze_points'],doc['calibration'],doc['words'],doc.get('layouts'),(doc.get('metrics') or {}).get('pronunciation'),reviewed=True)
     history={'previous_transcript':doc['transcript'],'transcript':data.transcript,'note':data.note,'reviewer_id':user['id'],'created_at':now()}
     await db.sessions.update_one({'id':id,'owner_id':user['id']},{'$set':{**result,'transcript':data.transcript,'reviewed':True},'$push':{'reviews':history}})
     await audit(user['id'],'review_transcript',id);return await owned(id,user)
@@ -135,7 +143,14 @@ async def report(id:str,user=Depends(current_user)):
     rows=[(doc['metrics'].get(k),label) for k,label in [('accuracy','Ketepatan kata (%)'),('wer','WER (%)'),('wpm','Kata per menit'),('on_text_percent','Pandangan di area teks (%)'),('gaze_coverage','Cakupan data gaze (%)'),('fixations','Jumlah fiksasi'),('mean_fixation_ms','Rerata durasi fiksasi (ms)')]]
     rows+=[(gaze.get(k),label) for k,label in [('regressions_within_line','Regresi dalam baris'),('regressions_between_line','Regresi antar baris'),('skipped_words_percent','Kata tidak tertatap (%)'),('reading_order_percent','Keteraturan alur baca (%)')]]
     rows.append((pron.get('mean_confidence'),'Kejelasan pelafalan rata-rata (%)'))
+    rows.append((doc['metrics'].get('asr_confidence'),'Keyakinan transkripsi otomatis (%)'))
     for value,label in rows:flow.append(Paragraph(escape(f'{label}: {value if value is not None else "Belum tersedia"}'),styles['Normal']))
+    for line in doc.get('quality_reasons') or []:flow.append(Paragraph(escape('• '+line),styles['Normal']))
+    fused=doc['metrics'].get('multimodal') or {}
+    if fused:
+        flow.extend([Spacer(1,10),Paragraph(escape('Bukti gabungan ('+fused.get('basis','')+')'),styles['Heading3'])])
+        for line in [fused.get('pattern'),fused.get('explanation'),'Kata sulit di kedua modalitas: '+', '.join(w['word'] for w in fused['agreement_words']) if fused.get('agreement_words') else None]:
+            if line:flow.append(Paragraph(escape(line),styles['Normal']))
     for line in [doc['profile_method'],*doc['recommendations'],*doc['limitations']]:flow.extend([Spacer(1,10),Paragraph(escape(line),styles['Normal'])])
     SimpleDocTemplate(buffer,pagesize=A4).build(flow);buffer.seek(0);await audit(user['id'],'export_report',id)
     return StreamingResponse(buffer,media_type='application/pdf',headers={'Content-Disposition':f'attachment; filename="cortexia-{id[:8]}.pdf"'})

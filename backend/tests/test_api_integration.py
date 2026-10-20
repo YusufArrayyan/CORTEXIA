@@ -218,7 +218,7 @@ def test_create_session_requires_consent(api_client, test_accounts, teacher1_ent
     assert response.status_code == 400
 
 
-def test_create_session_invalid_audio_returns_422(api_client, test_accounts, teacher1_entities):
+def test_create_session_invalid_audio_saves_session_with_speech_error(api_client, test_accounts, teacher1_entities):
     token = test_accounts["teacher1"]["token"]
     payload = {
         "student_id": teacher1_entities["student"]["id"],
@@ -238,7 +238,11 @@ def test_create_session_invalid_audio_returns_422(api_client, test_accounts, tea
         files=files,
         timeout=50,
     )
-    assert response.status_code == 422
+    # Sesi tetap tersimpan agar halaman hasil selalu muncul; galat suara dicatat.
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["speech_error"] and body["quality"] == "tidak_cukup"
+    assert body["quality_reasons"][0].startswith("Suara tidak dianalisis")
 
 
 def test_create_session_with_generated_audio_and_review(api_client, test_accounts, teacher1_entities):
