@@ -13,7 +13,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import accuracy_score,f1_score,confusion_matrix
 
-DATA=Path('/app/assets/dataset/ETDD70_v2')
+import os
+DATA=Path(os.environ.get('ETDD70_DIR') or Path(__file__).resolve().parent.parent/'assets'/'dataset'/'ETDD70_v2')
 MODELS=Path(__file__).parent/'models'/'research'
 TRIAL=['n_fix_trial','sum_fix_dur_trial','dwell_time_trial','mean_fix_dur_trial','n_sacc_trial','mean_sacc_dur_trial','mean_sacc_ampl_trial','n_between_line_regress_trial','n_within_line_regress_trial','n_regress_trial','n_progress_trial']
 ROI=['dwell_time_aoi','n_fix_aoi','mean_fix_dur_aoi','skipped_aoi','n_revisits_aoi']

@@ -159,7 +159,8 @@ webpackConfig.devServer = (devServerConfig) => {
 };
 
 // Wrap with visual edits (automatically adds babel plugin, dev server, and overlay in dev mode)
-if (isDevServer) {
+// Visual edits hanya untuk platform Emergent; plugin ini menyisipkan <span> (termasuk di dalam <option>).
+if (isDevServer && process.env.DISABLE_VISUAL_EDITS !== "true") {
   try {
     const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
     webpackConfig = withVisualEdits(webpackConfig);

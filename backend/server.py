@@ -27,4 +27,6 @@ for router in (auth_router, content_router, sessions_router, research_router, ga
 async def health():
     await db.command('ping')
     from analytics import asr_ready
-    return {'status':'ok', 'database':'connected', 'speech_model': 'ready' if asr_ready() else 'unavailable', 'gaze':'WebGazer 3.5.3', 'paid_services':False}
+    from pronunciation import vosk_ready
+    import tts
+    return {'status':'ok', 'database':'connected', 'speech_model': 'ready' if asr_ready() else 'unavailable', 'pronunciation_model': 'ready' if vosk_ready() else 'unavailable', 'tts': tts.engine() or 'browser-fallback', 'gaze':'WebGazer 3.5.3 (model wajah lokal)', 'paid_services':False}

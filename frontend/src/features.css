@@ -1,0 +1,152 @@
+/* Revisi: preview kamera, kalibrasi, analisis tatapan, pelafalan, dan game Ikuti Kata. */
+
+/* ---------- Preview kamera WebGazer ---------- */
+#webgazerVideoContainer{z-index:70!important;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px -14px #2a2350a8;background:#1d1a2b}
+body[data-gaze-preview="large"] #webgazerVideoContainer{left:50%!important;top:calc(50% + 10px)!important;transform:translate(-50%,-50%);border:4px solid #fff}
+body[data-gaze-preview="small"] #webgazerVideoContainer{left:50%!important;top:10px!important;transform:translateX(-50%);border:3px solid #fff;opacity:.92}
+body:not([data-gaze-preview="small"]):not([data-gaze-preview="large"]):not([data-gaze-preview="corner"]) #webgazerVideoContainer{display:none!important}
+#webgazerFaceFeedbackBox{border-radius:14px}
+/* Langkah perangkat: kontrol di kiri, kamera besar di kanan agar semuanya terlihat tanpa menggulir. */
+.reading-setup.device-step{max-width:1240px;display:grid;grid-template-columns:minmax(280px,340px) minmax(0,1fr);column-gap:30px;align-content:start}
+.reading-setup.device-step>*{grid-column:1}
+.reading-setup.device-step>.page-heading{grid-column:1/-1;margin-bottom:22px}
+.reading-setup.device-step .device-grid{grid-template-columns:1fr;margin:0 0 18px}
+.reading-setup.device-step>.camera-preview{grid-column:2;grid-row:2/span 8;margin:0 auto}
+.camera-preview{display:block;max-width:none!important;width:min(100%,calc((100vh - 250px) * 4 / 3));border:4px solid #fff;box-shadow:0 10px 24px -14px #51456f66;border-radius:22px!important}
+
+/* ---------- Kalibrasi ---------- */
+.face-stage{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:22px 20px 26px;text-align:center}
+.face-stage-copy h1{font-size:30px;font-weight:850}
+.face-stage-copy p{font-size:13px;color:#8a8199;max-width:560px;margin:6px auto 0;line-height:1.7}
+.face-frame-space{flex:1}
+.face-check{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:99px;background:#fff4df;color:#96743c;font-size:13px;font-weight:600;margin-bottom:14px;max-width:92vw}
+.face-check.ok{background:#e9f5ee;color:#3c8a68}
+.face-actions{justify-content:center}
+.calibration-top{left:16px!important;right:auto!important;top:12px!important;width:min(30vw,340px);text-align:left!important}
+.calibration-top strong{display:block;color:#4a4268;font-size:13px}
+.calibration-top p{margin-top:6px}
+.calibration-top p.warn{color:#c26a3a;font-weight:600}
+.calibration-dots{display:flex;gap:5px;margin-top:8px}
+.calibration-dots i{width:9px;height:9px;border-radius:50%;background:#e9e5f6}
+.calibration-dots i.done{background:#fa702e}
+.calibration-dots i.active{background:#b54a13;box-shadow:0 0 0 3px #ffd9c2}
+.calibration-target{transition:left .35s,top .35s}
+.calibration-target.validating{animation:pulse 1s infinite;background:#7c86e0;border-color:#dfe2ff;box-shadow:0 0 0 9px #eef0ff}
+.calibration-exit{display:flex;gap:10px}
+
+/* ---------- Analisis tatapan ---------- */
+.gaze-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.segmented{display:inline-flex;background:#f1effa;border-radius:99px;padding:4px;gap:3px}
+.segmented button{border:0;background:none;padding:8px 14px;border-radius:99px;font-size:12px;color:#7d74a0;font-weight:600}
+.segmented button.active{background:#fff;color:var(--orange);box-shadow:0 2px 6px #4f45781a}
+.replay-controls{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;min-width:240px}
+.replay-controls input{flex:1;max-width:280px;accent-color:var(--orange)}
+.gaze-stage{position:relative;width:100%;background:#fff;border:1px solid #ece6f0;border-radius:14px;overflow:hidden}
+.gaze-stage-inner{position:absolute;inset:0}
+.gaze-word{position:absolute;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-weight:600;color:#6d6684;border-radius:5px;white-space:nowrap;transition:background-color .2s}
+.gaze-word.hot{color:#3d2a20}
+.gaze-word.current{outline:2px solid #5965be;outline-offset:1px}
+.gaze-path{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.dwell-list{display:flex;flex-wrap:wrap;gap:10px}
+.dwell-chip{display:flex;flex-direction:column;padding:10px 14px;border-radius:12px;background:#fff7f1;border:1px solid #f6dfcf;transition:transform .2s}
+.dwell-chip:hover{transform:translateY(-2px)}
+.dwell-chip b{font:800 16px 'Nunito',sans-serif;color:#c25a22}
+.dwell-chip small{font-size:10px;color:#a48d7f}
+.annotations .weak{background:#fde3d3;outline:1px dashed #e08a5c;color:#b0522a}
+
+/* ---------- Pelafalan ---------- */
+.pronunciation-result{text-align:center}
+.pronunciation-result.verdict-tepat{background:#eef8f2}
+.pronunciation-result.verdict-hampir{background:#fff6e8}
+.pronunciation-result.verdict-latihan{background:#fff0ec}
+.score-ring{--score:0;width:96px;height:96px;margin:14px auto 6px;border-radius:50%;display:grid;place-items:center;align-content:center;background:radial-gradient(closest-side,#fff 79%,transparent 80% 100%),conic-gradient(var(--orange) calc(var(--score)*1%),#eee9f6 0)}
+.score-ring span{font:850 28px 'Nunito',sans-serif;line-height:1}
+.score-ring small{font-size:9px;color:#9b8fa8;margin:0!important}
+.syllables{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:16px 0 6px}
+.syllables button{font:800 22px 'Nunito',sans-serif;padding:8px 16px;border-radius:12px;border:2px solid #d9efe2;background:#f1faf5;color:#2f8a62;transition:transform .15s}
+.syllables button:hover{transform:translateY(-2px)}
+.syllables button.bad{border-color:#ffd2b8;background:#fff1e8;color:#d4602a}
+
+/* ---------- Game Ikuti Kata ---------- */
+.gaze-game{max-width:1180px}
+.game-topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+.pill-link,.game-title-pill{display:inline-flex;align-items:center;gap:9px;background:#fff;border-radius:99px;padding:12px 22px;font:700 17px 'Nunito',sans-serif;box-shadow:0 6px 16px -12px #4c437a40}
+.pill-link svg{color:#c2461a}
+.game-title-pill{font-size:20px;font-weight:800}
+.game-meta{display:flex;gap:10px;align-items:center}
+.points-pill{display:inline-flex;align-items:center;gap:8px;background:#fde7d4;color:#7a4a17;border-radius:99px;padding:11px 20px;font:700 18px 'Nunito',sans-serif}
+.points-pill svg{color:#8a5414}
+.level-pill{background:#e6e7ff;color:#3c3f80;border-radius:99px;padding:10px 16px;font-size:12px;font-weight:700}
+.gaze-stage-card{position:relative;border-radius:34px;background:linear-gradient(180deg,#f1f2ff 0%,#eceeff 62%,#e2e5ff 100%);padding:56px 48px 40px;min-height:430px;overflow:hidden;box-shadow:0 18px 30px -24px #4c437a66}
+.cloud{position:absolute;background:#fff;border-radius:99px;opacity:.95}
+.cloud:before,.cloud:after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud.c1{width:110px;height:42px;left:40px;top:44px}
+.cloud.c1:before{width:58px;height:58px;left:22px;top:-26px}
+.cloud.c1:after{width:40px;height:40px;left:62px;top:-14px}
+.cloud.c2{width:90px;height:30px;left:52%;top:92px;opacity:.7}
+.sun-badge{position:absolute;right:56px;top:34px;width:78px;height:78px;border-radius:50%;background:#ffa526;color:#fff;display:grid;place-items:center;box-shadow:0 10px 22px -8px #ff9b1ab0}
+.stage-hint{display:flex;align-items:center;gap:8px;width:max-content;max-width:100%;margin:0 auto 18px;background:#e2e4ff;color:#2c2f6b;border-radius:99px;padding:8px 18px;font-size:13px;font-weight:600;position:relative;z-index:2}
+.word-board{position:relative;z-index:2;background:#fff;border-radius:28px;padding:42px 46px;display:flex;flex-wrap:wrap;justify-content:center;gap:26px 34px;max-width:900px;margin:0 auto;box-shadow:0 12px 24px -20px #4c437a80}
+.board-word{position:relative;font:800 36px 'Nunito',sans-serif;color:#8c7c74;padding:6px 16px;border-radius:14px;transition:background-color .25s,color .25s,transform .25s}
+.board-word.done{background:#fde7d2;color:#1e1b3d}
+.board-word.target{background:#f56d2f;color:#fff;transform:scale(1.06);box-shadow:0 8px 0 -2px #fff,0 10px 18px -6px #f56d2f8c}
+.board-word.upcoming{opacity:.85}
+.dwell-ring{--dwell:0;position:absolute;right:-12px;top:-12px;width:28px;height:28px;border-radius:50%;background:radial-gradient(closest-side,#fff 62%,transparent 64% 100%),conic-gradient(#3ab27b calc(var(--dwell)*100%),#ffd8c3 0)}
+.trail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.trail polyline{fill:none;stroke:#ffb35c;stroke-width:3;stroke-dasharray:7 7;stroke-linecap:round}
+.trail circle{fill:#ff9b2e}
+.stage-controls{position:relative;z-index:2;display:flex;justify-content:center;align-items:center;gap:18px;margin-top:30px}
+.round-sound{width:62px;height:62px;border-radius:50%;background:#ffa526;color:#fff;border:0;display:grid;place-items:center;box-shadow:0 4px 0 #e0891a;transition:transform .2s}
+.round-sound:hover{transform:translateY(-2px)}
+.face-pill{position:absolute;left:24px;bottom:20px;z-index:3;display:flex;gap:6px;align-items:center;background:#fff;border-radius:99px;padding:7px 14px;font-size:12px;font-weight:600;color:#c26a3a}
+.face-pill.ok{color:#3c8a68}
+.gaze-dot{position:fixed;left:-14px;top:-14px;width:28px;height:28px;border-radius:50%;background:#5965be33;border:3px solid #5965bebb;pointer-events:none;z-index:80;transition:transform .08s linear}
+.game-info-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+.game-info-cards>div{display:flex;align-items:center;gap:16px;background:#fff;border-radius:22px;padding:22px 24px;box-shadow:0 8px 18px -16px #4c437a60}
+.game-info-cards small{display:block;font-size:12px;color:#6f5f4c;font-weight:600}
+.game-info-cards b{font:600 17px 'Nunito',sans-serif}
+.info-icon{width:46px;height:46px;border-radius:50%;background:#e6e7ff;color:#3c3f80;display:grid;place-items:center;flex-shrink:0}
+.info-icon.warm{background:#ffeedd}
+.info-icon img{width:30px;height:30px;object-fit:contain}
+.gaze-intro{display:grid;grid-template-columns:.8fr 1.2fr;gap:30px;align-items:center}
+.gaze-intro.ready{grid-template-columns:1fr;text-align:center}
+.gaze-intro.ready .button-row{justify-content:center;margin-top:18px}
+.gaze-intro img{width:100%;border-radius:18px;aspect-ratio:1.3;object-fit:cover}
+.gaze-intro h1{font-size:30px;font-weight:850;margin-bottom:8px}
+.level-choice{display:flex;gap:10px;margin:18px 0}
+.level-choice button,.input-choice label{flex:1;border:2px solid #ece8f6;background:#faf9ff;border-radius:14px;padding:12px;text-align:left;cursor:pointer;transition:border-color .2s}
+.level-choice button b{display:block;font:800 15px 'Nunito',sans-serif}
+.level-choice button small{font-size:11px;color:#8f86a1}
+.level-choice button.active,.input-choice label.active{border-color:var(--orange);background:#fff7f1}
+.input-choice{display:flex;gap:10px;margin-bottom:18px}
+.input-choice label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.input-choice input{accent-color:var(--orange)}
+
+@media(max-width:900px){
+ .reading-setup.device-step{grid-template-columns:1fr}
+ .reading-setup.device-step>.camera-preview{grid-column:1;grid-row:auto;width:100%;margin:10px 0 18px}
+}
+@media(max-width:760px){
+ .gaze-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .gaze-stage-card{padding:44px 16px 70px;border-radius:24px}
+ .word-board{padding:24px 18px;gap:14px 16px}
+ .board-word{font-size:24px}
+ .sun-badge{width:54px;height:54px;right:18px;top:18px}
+ .game-info-cards,.gaze-intro{grid-template-columns:1fr}
+ .level-choice,.input-choice{flex-direction:column}
+ .calibration-top{width:60vw}
+ .game-title-pill{font-size:16px}
+}
+.consent-box.attention{outline:3px solid #fa702e;background:#fff3ea;animation:pulse 1s 2}
+.consent-hint{margin-top:16px;font-size:13px;font-weight:600;color:#c2541c;background:#fff3ea;padding:10px 14px;border-radius:10px;display:inline-block}
+
+/* Kalibrasi: klik sekali, cincin terisi selama sampel mata direkam */
+.calibration-target{--p:0;width:56px;height:56px;margin:-28px 0 0 -28px;border:0;padding:0;background:radial-gradient(closest-side,#fff6ec 68%,transparent 70%),conic-gradient(#fa702e calc(var(--p)*100%),#ffd9bf 0);box-shadow:0 10px 24px -10px #fa702eaa;transition:left .45s cubic-bezier(.4,0,.2,1),top .45s cubic-bezier(.4,0,.2,1),transform .2s;animation:calib-breathe 1.6s ease-in-out infinite}
+.calibration-core{width:12px;height:12px;border-radius:50%;background:#19244c;box-shadow:0 0 0 5px #fa702e;pointer-events:none}
+.calibration-target.capturing{animation:none;transform:scale(calc(1 - var(--p)*.3));cursor:default}
+.calibration-target.validating{background:radial-gradient(closest-side,#eef0ff 68%,transparent 70%),#7c86e0;box-shadow:0 10px 24px -10px #5965beaa}
+.calibration-target.validating .calibration-core{box-shadow:0 0 0 5px #7c86e0}
+@keyframes calib-breathe{50%{transform:scale(1.12)}}
+body[data-gaze-preview="corner"] #webgazerVideoContainer{left:auto!important;top:auto!important;right:18px!important;bottom:18px!important;border:3px solid #fff;opacity:.92}
+.gaze-dot{left:-17px;top:-17px;width:34px;height:34px;background:radial-gradient(circle,#5965be 0 4px,#5965be2e 5px);border:2px solid #5965bebb;box-shadow:0 0 18px #5965be55;transition:transform .05s linear}
+.face-pill.warn{color:#b9541f;background:#fff4df}
