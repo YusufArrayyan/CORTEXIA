@@ -150,3 +150,7 @@ body:not([data-gaze-preview="small"]):not([data-gaze-preview="large"]):not([data
 body[data-gaze-preview="corner"] #webgazerVideoContainer{left:auto!important;top:auto!important;right:18px!important;bottom:18px!important;border:3px solid #fff;opacity:.92}
 .gaze-dot{left:-17px;top:-17px;width:34px;height:34px;background:radial-gradient(circle,#5965be 0 4px,#5965be2e 5px);border:2px solid #5965bebb;box-shadow:0 0 18px #5965be55;transition:transform .05s linear}
 .face-pill.warn{color:#b9541f;background:#fff4df}
+.metric-help{font-size:11px;line-height:1.6;color:#9b8fa8;margin-top:10px}
+.quality-reasons{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.6;color:#83748d}
+.fusion-pattern{font:800 16px 'Nunito',sans-serif;margin:6px 0}
+.glossary dt{font-weight:700;color:#7f6a8d;margin-top:10px}.glossary dd{margin:2px 0 0}
