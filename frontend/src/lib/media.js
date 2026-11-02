@@ -5,12 +5,20 @@ import {api} from './api';
  Mengembalikan Promise yang selesai setelah ucapan berakhir agar game bisa menunggu. */
 let activeAudio=null;
 const audioCache=new Map();
-const idVoice=()=>{const voices=window.speechSynthesis?.getVoices()||[];return voices.find(v=>/^id([-_]|$)/i.test(v.lang)&&/natural|online|google/i.test(v.name))||voices.find(v=>/^id([-_]|$)/i.test(v.lang))||null;};
-if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>idVoice();
-function browserSpeak(text,rate=.85){return new Promise((resolve,reject)=>{const synth=window.speechSynthesis;if(!synth){reject(new Error('Browser tidak mendukung suara.'));return;}synth.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='id-ID';u.rate=rate;const v=idVoice();if(v)u.voice=v;u.onend=()=>resolve();u.onerror=e=>e.error==='interrupted'||e.error==='canceled'?resolve():reject(new Error('Suara browser gagal diputar.'));synth.speak(u);});}
+/* Suara Indonesia terbaik yang tersedia: suara neural (Microsoft Gadis/Ardi "Natural", Google) lebih manusiawi daripada suara sistem lama. */
+const voiceRank=v=>/natural/i.test(v.name)?0:/google/i.test(v.name)?1:/online/i.test(v.name)?2:v.localService?3:4;
+const idVoice=()=>(window.speechSynthesis?.getVoices()||[]).filter(v=>/^id([-_]|$)/i.test(v.lang)).sort((a,b)=>voiceRank(a)-voiceRank(b))[0]||null;
+// Daftar suara Chrome dimuat asinkron. Tanpa menunggu, ucapan pertama memakai suara bawaan yang bisa berlogat Inggris.
+const voicesReady=()=>new Promise(resolve=>{const synth=window.speechSynthesis;if(!synth||synth.getVoices().length){resolve();return;}const t=setTimeout(resolve,1000);synth.addEventListener?.('voiceschanged',()=>{clearTimeout(t);resolve();},{once:true});});
+/* Sama dengan normalisasi di backend (tts.py): istilah dieja sesuai lafal Indonesia, ucapan diakhiri titik agar intonasi turun wajar. */
+const lexicon={cortexia:'Korteksia',corti:'Korti',dll:'dan lain-lain',dsb:'dan sebagainya',yg:'yang',dgn:'dengan',tdk:'tidak'};
+const speechText=text=>{const t=text.replace(/\s+/g,' ').trim().replace(/[A-Za-z]+/g,w=>lexicon[w.toLowerCase()]||w);return t&&!/[.!?]$/.test(t)?`${t}.`:t;};
+async function browserSpeak(text){const synth=window.speechSynthesis;if(!synth)throw new Error('Browser tidak mendukung suara.');await voicesReady();return new Promise((resolve,reject)=>{synth.cancel();const single=text.split(' ').length===1,u=new SpeechSynthesisUtterance(text);
+ // Kata tunggal sedikit lambat agar tiap suku kata jelas; kalimat mendekati tempo normal. Nada sedikit dinaikkan agar terdengar ramah.
+ u.lang='id-ID';u.rate=single?.8:.92;u.pitch=1.08;const v=idVoice();if(v)u.voice=v;u.onend=()=>resolve();u.onerror=e=>e.error==='interrupted'||e.error==='canceled'?resolve():reject(new Error('Suara browser gagal diputar.'));synth.speak(u);});}
 function playUrl(url){return new Promise((resolve,reject)=>{const audio=new Audio(url);activeAudio=audio;audio.onended=()=>{if(activeAudio===audio)activeAudio=null;resolve();};audio.onerror=()=>reject(new Error('Audio gagal diputar.'));audio.play().catch(reject);});}
 export async function speak(text){
- stopSpeech();const key=text.trim().toLowerCase();
+ stopSpeech();text=speechText(text);if(!text)return;const key=text.toLowerCase();
  try{let url=audioCache.get(key);if(!url){const r=await api.get('/speech/synthesize',{params:{text},responseType:'blob'});url=URL.createObjectURL(r.data);audioCache.set(key,url);}await playUrl(url);return;}
  catch(e){if(e?.name==='NotAllowedError')throw new Error('Browser memblokir suara. Klik tombol sekali lagi.');}
  await browserSpeak(text);
