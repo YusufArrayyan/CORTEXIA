@@ -72,7 +72,7 @@ export default function GazeGame(){
  const onCalibrated=useCallback(value=>{setCalibration(value);if(!value.passed)toast.warning('Kalibrasi kurang akurat. Game tetap bisa dimainkan; area kata dibuat lebih longgar.');setPhase('ready');},[]);
 
  if(!levels&&!error)return <Loading/>;
- if(phase==='calibrate')return <Calibration quick onComplete={onCalibrated} onCancel={()=>{stopGaze();setPhase('intro');}}/>;
+ if(phase==='calibrate')return <Calibration onComplete={onCalibrated} onCancel={()=>{stopGaze();setPhase('intro');}}/>;
 
  const centers=done.map(i=>{const el=wordRefs.current[i],box=stageRef.current?.getBoundingClientRect();if(!el||!box)return null;const r=el.getBoundingClientRect();return [r.left+r.width/2-box.left,r.bottom-box.top+6];}).filter(Boolean);
 

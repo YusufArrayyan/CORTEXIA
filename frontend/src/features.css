@@ -140,7 +140,7 @@ body:not([data-gaze-preview="small"]):not([data-gaze-preview="large"]):not([data
 .consent-box.attention{outline:3px solid #fa702e;background:#fff3ea;animation:pulse 1s 2}
 .consent-hint{margin-top:16px;font-size:13px;font-weight:600;color:#c2541c;background:#fff3ea;padding:10px 14px;border-radius:10px;display:inline-block}
 
-/* Kalibrasi: klik sekali, cincin terisi selama sampel mata direkam */
+/* Kalibrasi: titik direkam otomatis, cincin terisi selama sampel mata direkam */
 .calibration-target{--p:0;width:56px;height:56px;margin:-28px 0 0 -28px;border:0;padding:0;background:radial-gradient(closest-side,#fff6ec 68%,transparent 70%),conic-gradient(#fa702e calc(var(--p)*100%),#ffd9bf 0);box-shadow:0 10px 24px -10px #fa702eaa;transition:left .45s cubic-bezier(.4,0,.2,1),top .45s cubic-bezier(.4,0,.2,1),transform .2s;animation:calib-breathe 1.6s ease-in-out infinite}
 .calibration-core{width:12px;height:12px;border-radius:50%;background:#19244c;box-shadow:0 0 0 5px #fa702e;pointer-events:none}
 .calibration-target.capturing{animation:none;transform:scale(calc(1 - var(--p)*.3));cursor:default}
