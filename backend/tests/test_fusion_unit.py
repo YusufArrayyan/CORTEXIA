@@ -113,3 +113,38 @@ def test_exclusion_reason_matches_cause():
     unsure = analyze(REF, REF, 8, pts, CAL_OK, low_conf_words(REF))
     f = unsure["metrics"]["multimodal"]
     assert f["speech_excluded_reason"] == "transkrip otomatis belum andal" and "koreksi transkripsi" in f["explanation"]
+
+
+def test_pronunciation_and_gaze_agree_on_reference_index():
+    m = metrics(errors=(), hard=(3,))
+    m["pronunciation"] = {"words": [
+        {"index": 3, "conf": 0.42}, {"index": 4, "conf": 0.32}, {"index": 5, "conf": 0.99}
+    ]}
+    combined = fuse(REF, m, True)
+    assert combined["pronunciation_gaze_words"] == [{"index": 3, "word": "taman", "conf": 0.42}]
+    assert combined["speech_error_words"] == 0
+    assert fuse(REF, m, False)["pronunciation_gaze_words"] == []
+
+
+def test_observations_align_insertions_and_repeated_words():
+    from analytics import word_observations
+    words = [dict(word=w, start=i, end=i+.25) for i,w in enumerate("aku eh baca aku".split())]
+    gaze = [dict(index=2, ms=450, first_fixation_ms=150, first_visit_ms=300, first_visit_fixations=2)]
+    rows = word_observations("aku baca aku", "aku eh baca aku", words, gaze, 4)
+    assert len(rows) == 1 and rows[0]["display_index"] == 2
+    assert rows[0]["word"] == "aku" and rows[0]["asr_word_duration_ms"] == 250
+    words[-1]["end"] = 5
+    assert word_observations("aku baca aku", "aku eh baca aku", words, gaze, 4) == []
+
+
+def test_first_visit_excludes_time_after_return():
+    from analytics import gaze_metrics
+    positions = [0.1]*10 + [0.8]*10 + [0.1]*10
+    points = [{"x":x, "y":0.5, "t":i/10} for i,x in enumerate(positions)]
+    layout = {"t":0, "width":900, "height":500, "words":[
+        {"i":i, "text":word, "x":x, "y":.45, "w":.1, "h":.1, "line":0}
+        for i,(word,x) in enumerate([("aku",.05),("baca",.75)])]}
+    measured = gaze_metrics(points, 3, CAL_OK, [layout])["gaze"]["words"][0]
+    assert measured["visits"] == 2 and measured["first_visit_fixations"] == 1
+    assert measured["first_fixation_ms"] == measured["first_visit_ms"] == 900
+    assert measured["ms"] == 1800

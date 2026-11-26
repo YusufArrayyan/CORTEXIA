@@ -8,16 +8,33 @@ from core import ROOT
 _model=None
 _lock=threading.Lock()
 MODEL_DIR=ROOT/'models'/'whisper'
-def asr_ready():return any(MODEL_DIR.glob('**/model.bin'))
+def whisper_directory():
+    # A Windows checkout can contain text links instead of snapshot binaries.
+    for weights in sorted(MODEL_DIR.glob('**/model.bin')):
+        directory = weights.parent
+        if (weights.is_file() and weights.stat().st_size > 1024
+                and all((directory / name).is_file() for name in ('config.json', 'tokenizer.json', 'vocabulary.txt'))):
+            return directory
+    return None
+
+def asr_ready():
+    return whisper_directory() is not None
+
 def transcribe(path):
+    from pronunciation import decode_pcm
+    result = transcribe_pcm(decode_pcm(path))
+    result['words'], _ = clean_words(result['words'])
+    return result
+
+
+def transcribe_pcm(pcm):
     global _model
     with _lock:
         if _model is None:
-            if not asr_ready(): raise RuntimeError('Model suara lokal belum tersedia.')
-            _model=WhisperModel('base',device='cpu',compute_type='int8',download_root=str(MODEL_DIR),local_files_only=True,cpu_threads=2,num_workers=1)
+            directory = whisper_directory()
+            if directory is None: raise RuntimeError('Model suara lokal belum tersedia.')
+            _model=WhisperModel(str(directory),device='cpu',compute_type='int8',local_files_only=True,cpu_threads=2,num_workers=1)
         # Decode sendiri ke PCM 16 kHz agar tidak bergantung pada API PyAV yang dipakai faster-whisper.
-        from pronunciation import decode_pcm
-        pcm=decode_pcm(path)
         validate_pcm(pcm)
         audio=np.frombuffer(pcm,dtype=np.int16).astype(np.float32)/32768.0
         segments,info=_model.transcribe(audio,language='id',beam_size=5,word_timestamps=True,vad_filter=True,condition_on_previous_text=False)
@@ -26,7 +43,6 @@ def transcribe(path):
             if seg.no_speech_prob>0.7:continue
             texts.append(seg.text.strip())
             for w in seg.words or []:words.append({'word':w.word.strip(),'start':w.start,'end':w.end,'probability':w.probability})
-        words,_=clean_words(words)
         duration=float(info.duration) if _finite(info.duration) and info.duration>0 else len(pcm)/2/16000
         return {'transcript':' '.join(texts),'words':words,'audio_duration':round(duration,2),'language':'id','model':'faster-whisper/base-int8'}
 
@@ -236,11 +252,24 @@ def gaze_metrics(points,duration,calibration,layouts=None):
         base['gaze']=detail;return base
     words=layouts[-1]['words'];total_words=len(words)
     dwell={};visits={};seq=[];unmapped=0
+    first_visits = {}
+    previous_word = None
     for f in fix:
         layout=layout_at(layouts,f['start']);line,word=assign_word(f,layout)
         w,h=layout['width'],layout['height']
         detail['scanpath'].append({'x':round(f['x'],4),'y':round(f['y'],4),'d':f['d'],'t':round(f['start'],2),'line':line,'word':word['i'] if word else None})
         if line is not None:detail['line_timeline'].append({'t':round(f['start'],2),'line':line+1})
+        index = word['i'] if word else None
+        if index is not None:
+            if index not in first_visits:
+                first_visits[index] = {'first_fixation_ms': f['d'], 'first_visit_ms': f['d'],
+                                       'first_visit_fixations': 1, 'visit_closed': False}
+            elif previous_word != index:
+                first_visits[index]['visit_closed'] = True
+            elif not first_visits[index]['visit_closed']:
+                first_visits[index]['first_visit_ms'] += f['d']
+                first_visits[index]['first_visit_fixations'] += 1
+        previous_word = index
         if word:
             dwell[word['i']]=dwell.get(word['i'],0)+f['d']
             if not seq or seq[-1]['word']!=word['i']:
@@ -263,7 +292,11 @@ def gaze_metrics(points,duration,calibration,layouts=None):
         'revisited_words':sum(1 for v in visits.values() if v>1),
         'mean_saccade_px':round(float(np.mean(amps)),1) if amps else None,
         'longest_dwell':[{'index':i,'word':re.sub(r'[^\w-]','',by_index[i]['text']) if i in by_index else '','ms':round(ms,1),'visits':visits.get(i,0)} for i,ms in sorted(dwell.items(),key=lambda kv:-kv[1])[:6]],
-        'words':[{'index':i,'ms':round(ms,1),'visits':visits.get(i,0)} for i,ms in sorted(dwell.items())],
+        'words':[{'index':i,'ms':round(ms,1),'visits':visits.get(i,0),
+                  'first_fixation_ms':first_visits[i]['first_fixation_ms'],
+                  'first_visit_ms':round(first_visits[i]['first_visit_ms'],1),
+                  'first_visit_fixations':first_visits[i]['first_visit_fixations']}
+                 for i,ms in sorted(dwell.items())],
     })
     detail['scanpath']=detail['scanpath'][:800];detail['line_timeline']=detail['line_timeline'][:800]
     base['regressions']=within+between
@@ -286,6 +319,41 @@ def display_to_reference(reference):
     for i,token in enumerate(reference.split(' ')):
         n=len(normalize(token).split());mapping[i]=list(range(k,k+n));k+=n
     return mapping
+
+def word_observations(reference, transcript, words, gaze_words, duration):
+    """Match one timestamped ASR token to one displayed word by sequence alignment."""
+    mapping = display_to_reference(reference)
+    ref = normalize(reference).split()
+    native = [normalize(w['word']) for w in words]
+    if not ref or not native or any(len(t.split()) != 1 for t in native):
+        return []
+    if native != normalize(transcript).split():
+        return []
+    previous_end = 0
+    for w in words:
+        start, end = w.get('start'), w.get('end')
+        if not (_finite(start) and _finite(end) and previous_end <= start < end <= duration + 0.005):
+            return []
+        previous_end = end
+    alignment = jiwer.process_words(' '.join(ref), ' '.join(native))
+    spoken = {}
+    for chunk in alignment.alignments[0]:
+        if chunk.type == 'equal':
+            for i in range(chunk.ref_start_idx, chunk.ref_end_idx):
+                spoken[i] = words[chunk.hyp_start_idx + i - chunk.ref_start_idx]
+    observations = []
+    for gaze in gaze_words:
+        indices = mapping.get(gaze['index'], [])
+        if len(indices) == 1 and indices[0] in spoken:
+            i = indices[0]
+            w = spoken[i]
+            observations.append({'display_index':gaze['index'], 'word':ref[i],
+                                 'first_fixation_ms':gaze['first_fixation_ms'],
+                                 'first_visit_ms':gaze['first_visit_ms'],
+                                 'first_visit_fixations':gaze['first_visit_fixations'],
+                                 'total_fixation_ms':gaze['ms'],
+                                 'asr_word_duration_ms':round((w['end']-w['start'])*1000, 1)})
+    return observations
 
 WER_MAX=20             # WER (%) di atas ini -> sinyal ketepatan kata rendah
 WPM_MIN=60             # kata/menit di bawah ini -> sinyal kelancaran rendah
@@ -314,6 +382,12 @@ def fuse(reference,m,speech_reliable,excluded_reason='transkrip otomatis belum a
         for w in g['words']:
             long_dwell=median>0 and _finite(w.get('ms')) and w['ms']>=DWELL_RATIO*median
             if long_dwell or (w.get('visits') or 0)>=REVISIT_MIN:gaze_hard.update(mapping.get(w['index'],[]))
+    acoustic_matches = [
+        {'index': word['index'], 'word': ref_words[word['index']], 'conf': word['conf']}
+        for word in (m.get('pronunciation') or {}).get('words', [])
+        if has_speech and word['index'] in gaze_hard and 0 <= word['index'] < len(ref_words)
+        and _finite(word.get('conf')) and word['conf'] < 0.6
+    ]
     agree=sorted(speech_err&gaze_hard)
     concordance=round(len(agree)/len(speech_err)*100,1) if has_speech and has_gaze and speech_err else None
     concordant=concordance is not None and concordance>=CONCORDANCE_MIN
@@ -327,7 +401,7 @@ def fuse(reference,m,speech_reliable,excluded_reason='transkrip otomatis belum a
         if reg is not None and reg>REGRESSION_MAX:gaze_reasons.append(f'regresi {reg}% > {REGRESSION_MAX}%')
         if skip is not None and skip>SKIPPED_MAX:gaze_reasons.append(f'kata tak tertatap {skip}% > {SKIPPED_MAX}%')
     gaze_irregular=bool(gaze_reasons)
-    out={'basis':basis,'speech_error_words':len(speech_err),'gaze_difficult_words':len(gaze_hard) if has_gaze else None,
+    out={'basis':basis,'pronunciation_gaze_words':acoustic_matches,'speech_error_words':len(speech_err),'gaze_difficult_words':len(gaze_hard) if has_gaze else None,
          'agreement_words':[{'index':i,'word':ref_words[i]} for i in agree if i<len(ref_words)][:12],
          'concordance':concordance,'concordant':concordant,'multimodal_complete':has_speech and has_gaze,
          'speech_excluded_reason':excluded_reason if speech_available and not speech_reliable else None,
@@ -427,6 +501,9 @@ def analyze(reference,transcript,duration,points,calibration,words,layouts=None,
         m.update(_empty_gaze({'received':len(points or []),'valid':0},calibration_ok(calibration)))
         warnings.append('Analisis tatapan gagal; hasil hanya berdasarkan suara.')
     m['pronunciation']=pronunciation
+    m['word_observations'] = []
+    if reliable and not reviewed and m['gaze_usable'] and (m.get('gaze') or {}).get('words'):
+        m['word_observations'] = word_observations(reference, transcript, words, m['gaze']['words'], duration)
     m['speech_error']=speech_error
     # Kualitas hanya menghitung modalitas yang lolos quality gate masing-masing.
     passed=[name for name,ok in (('suara',reliable),('tatapan',m['gaze_usable'])) if ok]
@@ -465,7 +542,7 @@ def analyze(reference,transcript,duration,points,calibration,words,layouts=None,
     if pronunciation and pronunciation.get('weak_words'):recommendations.append('Pelafalan kata berikut terdengar kurang jelas: '+', '.join(w['word'] for w in pronunciation['weak_words'][:4])+'.')
     if not m['gaze_usable'] and m.get('gaze_analyzable'):recommendations.append('Tatapan terekam tetapi kalibrasi/cakupan belum memadai; pola visual hanya sebagai gambaran awal.')
     elif not m['gaze_usable']:recommendations.append('Data tatapan belum layak; kalibrasi ulang sebelum meninjau pola visual.')
-    result={'metrics':m,'profile':profile,'profile_reason':profile_reason,'quality':quality,'quality_reasons':quality_reasons(m,speech,enough,reliable,confidence,speech_error,reviewed),'recommendations':recommendations,'profile_method':'Aturan observasional v1 — bukan model diagnosis','confidence':None,'limitations':['Akurasi kata berasal dari transkripsi, bukan penilaian fonem.','Keyakinan transkripsi adalah rerata probabilitas kata dari Whisper, bukan ukuran ketepatan bacaan.','Kepercayaan pelafalan per kata berasal dari model Vosk anak (bookbot) dan bukan penilaian klinis.','Batas 20% WER / 60 kata per menit merupakan aturan latihan awal, bukan norma usia tervalidasi.','Fiksasi webcam dideteksi dengan I-DT sederhana; ketelitian jauh di bawah eye-tracker laboratorium.','Fusi suara + tatapan memakai aturan (kata sulit = dwell ≥1,5× median atau dikunjungi ulang) dan belum divalidasi terhadap penilaian ahli.','Model ETDD70 tidak diterapkan pada sesi webcam berbahasa Indonesia.','Sebelum koreksi pendamping, WER mencampur galat transkripsi otomatis dan galat membaca; reading_error_rate dan asr_wer hanya tersedia setelah transkrip ditinjau.','Data suara yang belum andal tidak dipakai untuk fusi dan profil latihan.']}
+    result={'metrics':m,'profile':profile,'profile_reason':profile_reason,'quality':quality,'quality_reasons':quality_reasons(m,speech,enough,reliable,confidence,speech_error,reviewed),'recommendations':recommendations,'profile_method':'Aturan observasional v1 — bukan model diagnosis','confidence':None,'limitations':['Akurasi kata berasal dari transkripsi, bukan penilaian fonem.','Keyakinan transkripsi adalah rerata keyakinan kata dari model transkripsi, bukan ukuran ketepatan bacaan.','Kepercayaan pelafalan per kata berasal dari model Vosk anak (bookbot) dan bukan penilaian klinis.','Batas 20% WER / 60 kata per menit merupakan aturan latihan awal, bukan norma usia tervalidasi.','Fiksasi webcam dideteksi dengan I-DT sederhana; ketelitian jauh di bawah eye-tracker laboratorium.','Fusi suara + tatapan memakai aturan (kata sulit = dwell ≥1,5× median atau dikunjungi ulang) dan belum divalidasi terhadap penilaian ahli.','Sebelum koreksi pendamping, WER mencampur galat transkripsi otomatis dan galat membaca; reading_error_rate dan asr_wer hanya tersedia setelah transkrip ditinjau.','Data suara yang belum andal tidak dipakai untuk fusi dan profil latihan.']}
     result,bad=sanitize(result)
     if bad:warnings.append(f'{bad} nilai metrik tidak valid (NaN/Infinity) diganti kosong.')
     result['analysis_warnings']=warnings

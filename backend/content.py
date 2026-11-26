@@ -62,7 +62,7 @@ async def delete_student(id:str,user=Depends(current_user)):
 async def dashboard(user=Depends(current_user)):
     query={'owner_id':user['id']}
     # Ringkasan saja: data tatapan/kata mentah hanya diambil di halaman hasil sesi.
-    light={'_id':0,'gaze_points':0,'segments':0,'layouts':0,'words':0,'reference':0,'metrics.annotations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0,'metrics.gaze.words':0,'metrics.pronunciation.words':0}
+    light={'_id':0,'gaze_points':0,'segments':0,'layouts':0,'words':0,'reference':0,'metrics.annotations':0,'metrics.word_observations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0,'metrics.gaze.words':0,'metrics.pronunciation.words':0}
     rows=await db.sessions.find(query,light).sort('created_at',-1).to_list(300)
     # Rerata ketepatan hanya dari sesi dengan transkrip andal (sesi lama tanpa field dianggap andal).
     with_accuracy=[r for r in rows if r.get('metrics',{}).get('accuracy') is not None]

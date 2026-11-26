@@ -39,7 +39,8 @@ def reports_for(user):
 @router.get('/research')
 async def research(user=Depends(teacher)):
     frame=await asyncio.to_thread(dataset_frame);reports=reports_for(user)
-    return {'name':'ETDD70 v2','participants':int(frame.subject_id.nunique()),'recordings':len(frame),'tasks':frame.task.unique().tolist(),'features':len(frame.columns)-3,'labels':{'non-dyslexic':35,'dyslexic':35},'language':'Ceko','age':'9–10 tahun','frequency':'250 Hz','source':'Lampiran ETDD70_v2.zip','citation':'Dostalova et al. (2024), doi:10.5281/zenodo.13332134','subjects':sorted(frame.subject_id.unique().tolist()),'reports':[{k:v for k,v in r.items() if k!='oof'} for r in reports],'job':await get_job(user['id'])}
+    return {'turead':json.loads(Path(__file__).with_name('turead_summary.json').read_text(encoding='utf-8-sig')),
+            'name':'ETDD70 v2','participants':int(frame.subject_id.nunique()),'recordings':len(frame),'tasks':frame.task.unique().tolist(),'features':len(frame.columns)-3,'labels':{'non-dyslexic':35,'dyslexic':35},'language':'Ceko','age':'9–10 tahun','frequency':'250 Hz','source':'Lampiran ETDD70_v2.zip','citation':'Dostalova et al. (2024), doi:10.5281/zenodo.13332134','subjects':sorted(frame.subject_id.unique().tolist()),'reports':[{k:v for k,v in r.items() if k!='oof'} for r in reports],'job':await get_job(user['id'])}
 
 async def run_training(user,algorithm,frame=None):
     try:

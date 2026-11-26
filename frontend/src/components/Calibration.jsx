@@ -7,14 +7,13 @@ import {startGaze,stopGaze,gazePreview,faceStatus,mediaError,recordGazeSample,re
  2. Kalibrasi inti: 5 titik (tengah + 4 sudut), direkam otomatis tanpa klik.
  3. Validasi pada titik yang tidak dilatih. Early stop setelah 2 titik bila galat median sudah jauh di bawah batas.
  4. Perbaikan terarah, maksimal sekali: titik tambahan hanya di sekitar area yang meleset, data lama tidak dihapus. */
-// Baris atas sedikit turun agar tidak tertutup preview kamera kecil di tengah atas.
 const core=[[.5,.52],[.08,.22],[.92,.22],[.92,.85],[.08,.85]];
 const validation=[[.3,.38],[.7,.68],[.7,.38]];
 // Titik tambahan (tepi tengah) untuk tiap titik validasi yang meleset. Sengaja tidak menimpa titik validasi agar uji ulang tetap jujur.
 const extraFor=[[[.08,.52],[.5,.22]],[[.92,.52],[.5,.85]],[[.92,.52],[.5,.22]]];
 const MEMORY_MS=15*60e3,REUSE_DRIFT=.2,FACE_OK_MS=1000;
 const AUTO_MS=600,RETRY_MS=1200,CAPTURE_SETTLE_MS=300,LOST_MS=1500,SAMPLES=15;
-const SETTLE_MS=700,HOLD_MS=1500,PASS=.16,EARLY_PASS=.10,MIN_SAMPLES=15,EARLY_SAMPLES=10;
+const SETTLE_MS=700,HOLD_MS=1500,PASS=.16,EARLY_PASS=.10,MIN_SAMPLES=15;
 const median=v=>{if(!v.length)return null;const s=[...v].sort((a,b)=>a-b);return s[Math.floor(s.length/2)];};
 // Kalibrasi lulus terakhir di halaman ini. Model WebGazer tetap di memori selama pelacak tidak dihentikan.
 let lastPassed=null;
@@ -29,7 +28,7 @@ export const Calibration=({onComplete,onCancel,keepRunning=true})=>{
   setCapturing(false);
   stage.current='train';mode.current=refine?'refine':'core';lastPassed=null;
   if(!refine)await resetGazeData();
-  setPoints(list);setIndex(0);setRetry(0);setProgress(0);setNotice('');setStatus('train');gazePreview('small');sfx('start');
+  setPoints(list);setIndex(0);setRetry(0);setProgress(0);setNotice('');setStatus('train');gazePreview('hidden');sfx('start');
  };
  const startValidation=(order,next)=>{
   mode.current=next;checkList.current=order;errors.current=order.map(()=>[]);target.current=0;
@@ -38,7 +37,7 @@ export const Calibration=({onComplete,onCancel,keepRunning=true})=>{
  // Tahap 1 → 2 (atau langsung 3 bila kalibrasi lama masih cocok dengan posisi kepala sekarang).
  const proceed=()=>{
   if(stage.current!=='face')return;startedAt.current=performance.now();
-  if(canReuse&&reusable()&&headDrift(lastPassed.head)<REUSE_DRIFT){stage.current='validation';head.current=lastPassed.head;gazePreview('small');sfx('start');startValidation([0,1,2],'reuse');}
+  if(canReuse&&reusable()&&headDrift(lastPassed.head)<REUSE_DRIFT){stage.current='validation';head.current=lastPassed.head;gazePreview('hidden');sfx('start');startValidation([0,1,2],'reuse');}
   else beginTraining(core);
  };
  const advance=()=>{
@@ -55,9 +54,9 @@ export const Calibration=({onComplete,onCancel,keepRunning=true})=>{
  // Dipanggil tiap kali satu titik validasi selesai: early stop, lulus, atau tentukan tahap berikutnya.
  const checkpoint=()=>{
   const done=index+1,total=checkList.current.length,values=errors.current.slice(0,done).flat(),m=median(values);
-  if(total===3&&done===2&&m!==null&&m<=EARLY_PASS&&values.length>=EARLY_SAMPLES)return finish(true);
+  if(total===3&&done===2&&m!==null&&m<=EARLY_PASS&&values.length>=MIN_SAMPLES)return finish(true);
   if(done<total){target.current=done;setIndex(done);return;}
-  if(m!==null&&m<=PASS&&values.length>=(total===3?MIN_SAMPLES:EARLY_SAMPLES))return finish(true);
+  if(m!==null&&m<=PASS&&values.length>=MIN_SAMPLES)return finish(true);
   if(mode.current==='reuse')return beginTraining(core);// model lama tidak lagi cocok, latih dari awal
   if(mode.current==='refine')return finish(false);
   // Tahap 4: urutkan titik validasi dari yang paling meleset, tambah titik di sekitarnya, lalu uji ulang 2 titik terburuk.

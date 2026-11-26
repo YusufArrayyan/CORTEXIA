@@ -21,7 +21,9 @@ DIGRAPHS = ('ng', 'ny', 'sy', 'kh')
 
 
 def vosk_ready():
-    return (VOSK_DIR / 'am' / 'final.mdl').exists()
+    required = ('am/final.mdl', 'graph/words.txt', 'graph/HCLr.fst', 'graph/Gr.fst',
+                'conf/model.conf', 'conf/mfcc.conf', 'ivector/final.ie')
+    return all((VOSK_DIR / name).is_file() for name in required)
 
 
 def _load():
@@ -32,9 +34,10 @@ def _load():
                 raise RuntimeError('Model pelafalan lokal belum tersedia.')
             from vosk import Model, SetLogLevel
             SetLogLevel(-1)
-            _model = Model(str(VOSK_DIR))
+            model = Model(str(VOSK_DIR))
             with open(VOSK_DIR / 'graph' / 'words.txt', encoding='utf-8') as f:
                 _vocab = sorted({w for w in (line.split()[0] for line in f if line.strip()) if re.fullmatch(r'[a-z]+', w)})
+            _model = model
     return _model
 
 
@@ -271,10 +274,14 @@ def assess(path, target_text):
 
 def word_confidence(path, reference):
     """Kepercayaan akustik per kata bacaan (untuk sesi membaca) dari dekode bebas Vosk."""
-    import jiwer
-    from analytics import normalize
     pcm = decode_pcm(path)
     words = recognize(pcm) if pcm else []
+    return align_confidence(words, reference)
+
+
+def align_confidence(words, reference):
+    import jiwer
+    from analytics import normalize
     hyp = [w['word'] for w in words]
     # Indeks mengikuti normalize(reference).split() agar sejalan dengan anotasi analytics.align;
     # kata ulang seperti "kupu-kupu" dipecah untuk Vosk lalu digabung kembali.

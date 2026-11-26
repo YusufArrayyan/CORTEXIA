@@ -35,7 +35,7 @@ async def health():
     from analytics import asr_ready
     from pronunciation import vosk_ready
     import tts
-    return {'status':'ok', 'database':'connected', 'speech_model': 'ready' if asr_ready() else 'unavailable', 'pronunciation_model': 'ready' if vosk_ready() else 'unavailable', 'tts': tts.engine() or 'browser-fallback', 'gaze':'WebGazer 3.5.3 (model wajah lokal)', 'paid_services':False}
+    return {'status':'ok', 'database':'connected', 'speech_model': 'ready' if asr_ready() or vosk_ready() else 'unavailable', 'pronunciation_model': 'ready' if vosk_ready() else 'unavailable', 'tts': tts.engine() or 'browser-fallback', 'gaze':'WebGazer 3.5.3 (model wajah lokal)', 'paid_services':False}
 
 # Sajikan build React dari proses yang sama (satu port untuk frontend + API).
 # Aktif hanya jika frontend/build ada; lokasi bisa diganti lewat FRONTEND_BUILD_DIR.

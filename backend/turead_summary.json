@@ -1,0 +1,88 @@
+{
+  "source": "TURead_target_words.xlsx",
+  "source_sha256": "3857774c32a718f369b24436dbf80e469c42a053df984324064b6861a4b4cc7b",
+  "total_rows": 37416,
+  "total_participants": 196,
+  "selection_counts": {
+    "modality_oral": 18770,
+    "oral_label_0.0": 16087,
+    "oral_label_1.0": 2683,
+    "excluded_noncorrect_or_unknown": 2683,
+    "modality_silent": 18646
+  },
+  "selected_rows": 16087,
+  "selected_participants": 196,
+  "feature_missing_counts": {
+    "IA_SKIP": 0,
+    "IA_FIRST_FIXATION_DURATION": 379,
+    "IA_FIRST_RUN_DWELL_TIME": 379,
+    "IA_FIRST_RUN_FIXATION_COUNT": 379,
+    "TOTAL_FIXATION_DURATION": 0,
+    "IA_REGRESSION_OUT_COUNT": 379,
+    "REGRESSION_IN_COUNT": 0,
+    "IA_REGRESSION_PATH_DURATION": 379,
+    "Articulation_duration": 0
+  },
+  "target_wpm": {
+    "min": 3.2861435979004794,
+    "median": 96.96089404356808,
+    "mean": 97.0703875204467,
+    "max": 180.16457998346218
+  },
+  "features": {
+    "eye": [
+      "IA_SKIP",
+      "IA_FIRST_FIXATION_DURATION",
+      "IA_FIRST_RUN_DWELL_TIME",
+      "IA_FIRST_RUN_FIXATION_COUNT",
+      "TOTAL_FIXATION_DURATION",
+      "IA_REGRESSION_OUT_COUNT",
+      "REGRESSION_IN_COUNT",
+      "IA_REGRESSION_PATH_DURATION"
+    ],
+    "speech": [
+      "Articulation_duration"
+    ]
+  },
+  "metrics": [
+    {
+      "model": "median_baseline",
+      "mae": 14.361485337434491,
+      "rmse": 18.236935958451927,
+      "r2": -0.001470197404923157,
+      "mean_fold_mae": 14.359635397422892,
+      "sd_fold_mae": 0.4167715587676466,
+      "participant_macro_mae": 14.43062508647801
+    },
+    {
+      "model": "eye_only",
+      "mae": 13.441159678583922,
+      "rmse": 17.13204059665708,
+      "r2": 0.1162031010854293,
+      "mean_fold_mae": 13.44020153985883,
+      "sd_fold_mae": 0.2837637764212659,
+      "participant_macro_mae": 13.495175604354904
+    },
+    {
+      "model": "speech_only",
+      "mae": 13.663803866483802,
+      "rmse": 17.406568698078175,
+      "r2": 0.08765179782984134,
+      "mean_fold_mae": 13.662997158704712,
+      "sd_fold_mae": 0.30708743723927695,
+      "participant_macro_mae": 13.722507736761319
+    },
+    {
+      "model": "multimodal",
+      "mae": 13.33090376526504,
+      "rmse": 16.967280182837335,
+      "r2": 0.1331204725774391,
+      "mean_fold_mae": 13.329962996770131,
+      "sd_fold_mae": 0.3021551330038901,
+      "participant_macro_mae": 13.383298562295588
+    }
+  ],
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "sklearn": "1.8.0",
+  "evaluation": "5-fold GroupKFold by participant; fixed model parameters; pooled out-of-fold metrics; no external test or clinical validation"
+}
