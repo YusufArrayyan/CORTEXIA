@@ -51,7 +51,7 @@ export const mediaError=e=>e.name==='NotAllowedError'?'Izin perangkat ditolak. I
 let gazeStarted=false,gazeLoading=null,gazeStarting=null,gazeGeneration=0;
 export function loadGaze(){
  if(window.webgazer)return Promise.resolve(window.webgazer);
- if(!gazeLoading)gazeLoading=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/webgazer.js';script.onload=()=>resolve(window.webgazer);script.onerror=()=>{gazeLoading=null;script.remove();reject(new Error('Pelacak mata gagal dimuat.'));};document.body.appendChild(script);});
+ if(!gazeLoading)gazeLoading=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=process.env.PUBLIC_URL+'/webgazer.js';script.onload=()=>resolve(window.webgazer);script.onerror=()=>{gazeLoading=null;script.remove();reject(new Error('Pelacak mata gagal dimuat.'));};document.body.appendChild(script);});
  return gazeLoading;
 }
 export async function startGaze({fresh=true}={}){
@@ -60,7 +60,7 @@ export async function startGaze({fresh=true}={}){
   if(!gazeStarting){
    const generation=gazeGeneration;
    gazeStarting=(async()=>{
-    w.params.faceMeshSolutionPath='/mediapipe/face_mesh';
+    w.params.faceMeshSolutionPath=process.env.PUBLIC_URL+'/mediapipe/face_mesh';
     // Resolusi lebih tinggi = patch mata lebih besar = prediksi lebih stabil.
     w.params.camConstraints={video:{width:{min:320,ideal:1280,max:1920},height:{min:240,ideal:720,max:1080},facingMode:'user'}};
     w.saveDataAcrossSessions(false);w.setRegression('ridge').showPredictionPoints(false);w.applyKalmanFilter(true);
