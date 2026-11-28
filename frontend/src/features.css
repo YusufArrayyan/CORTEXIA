@@ -155,6 +155,62 @@ body[data-gaze-preview="corner"] #webgazerVideoContainer{left:auto!important;top
 .fusion-pattern{font:800 16px 'Nunito',sans-serif;margin:6px 0}
 .glossary dt{font-weight:700;color:#7f6a8d;margin-top:10px}.glossary dd{margin:2px 0 0}
 
+.student-label{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;white-space:nowrap;cursor:default}
+.game-preview{flex:1;min-width:0;margin:0;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #e8e4f1;border-radius:15px;background:#fff;color:#8a8798;font-size:12px;text-decoration:none;transition:transform .2s,box-shadow .2s,border-color .2s}
+.game-preview:hover{transform:translateY(-2px);border-color:#d8d2eb;box-shadow:0 8px 18px -14px #4c437a80}
+.game-preview:focus-visible{outline:3px solid #aeb5ff;outline-offset:3px}
+.game-preview>div,.game-preview-action{display:flex;align-items:center;gap:9px}
+.game-preview>div{min-width:0}
+.game-preview>div svg{flex-shrink:0;color:#666bb0}
+.game-preview strong{font-weight:600}
+.game-preview-action{flex-shrink:0;color:#666bb0;font-weight:700}
+.game-card img{object-fit:contain}
+.gaze-intro img{aspect-ratio:1.57;object-fit:contain}
+.game-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:14px}
+.game-title-pill{justify-self:center}
+.game-meta{justify-self:end}
+.game-stage .muted{font-size:14px}
+@media(max-width:900px){.corti-note{align-items:stretch;flex-direction:column}.game-preview{width:100%}}
+@media(max-width:760px){.game-topbar{grid-template-columns:1fr;justify-items:center;gap:12px}.game-meta{justify-self:center;justify-content:center;flex-wrap:wrap}.game-title-pill{font-size:16px}}
+
+.teacher-app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh;background:#f7f8fc}
+.teacher-app>.teacher-main{min-width:0}
+.teacher-sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:26px 18px 18px;background:#18244c;color:#fff;border-right:1px solid #263867;z-index:30}
+.sidebar-brand{display:block;padding:10px 12px;background:#fff;border-radius:12px;margin-bottom:18px}
+.sidebar-brand img{width:160px;height:auto}
+.teacher-nav{display:flex;flex-direction:column;gap:7px}
+.teacher-nav>a,.teacher-nav-parent,.teacher-submenu>a{width:100%;display:flex;align-items:center;gap:10px;border:0;text-decoration:none;color:#cdd4ec;font-size:13px;font-weight:700;border-radius:10px;padding:12px 12px;background:transparent;text-align:left}
+.teacher-nav>a:hover,.teacher-nav>a.active,.teacher-nav-parent:hover,.teacher-submenu>a:hover,.teacher-submenu>a.active{background:#263767;color:#fff}
+.teacher-nav-parent{justify-content:space-between}
+.teacher-nav-parent>span{display:flex;align-items:center;gap:10px}
+.teacher-submenu{display:flex;flex-direction:column;margin:2px 0 5px 12px;padding-left:10px;border-left:1px solid rgba(255,255,255,.12)}
+.teacher-submenu>a{font-size:12px;padding:9px 10px}
+.sidebar-profile{margin-top:auto;display:grid;grid-template-columns:38px minmax(0,1fr) 36px;gap:9px;align-items:center;padding:14px 8px 4px;border-top:1px solid rgba(255,255,255,.09)}
+.sidebar-avatar{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#f7a25c;color:#fff}
+.sidebar-profile strong,.sidebar-profile small{display:block}
+.sidebar-profile strong{font-size:13px;color:#fff}
+.sidebar-profile small{font-size:10px;color:#aeb8d8;margin-top:2px}
+.sidebar-profile .icon-button{width:34px;height:34px;border:0;background:rgba(255,255,255,.08);color:#fff}
+.teacher-main{padding:0}
+.teacher-dashboard-page,.teacher-dashboard{max-width:none;width:100%;padding:38px 44px 48px}
+.teacher-dashboard .page-heading,.teacher-dashboard-page .page-heading{border-bottom:1px solid #e7e9f2;padding-bottom:24px}
+.teacher-dashboard .tab-row{background:#fff;border:1px solid #e7e9f2;border-radius:12px;padding:4px 12px}
+.teacher-dashboard .tab-row button{border-bottom:0;border-radius:8px;padding:10px 12px}
+.teacher-dashboard .tab-row button.active{background:#eef0ff;border:0;color:#5965be}
+.teacher-mobile-menu{display:none}
+@media(max-width:900px){
+ .teacher-app{grid-template-columns:220px minmax(0,1fr)}
+ .teacher-dashboard-page,.teacher-dashboard{padding:30px 24px}
+}
+@media(max-width:760px){
+ .teacher-app{display:block}
+ .teacher-sidebar{position:fixed;left:-260px;width:252px;transition:left .22s ease}
+ .teacher-sidebar.open{left:0}
+ .teacher-mobile-menu{display:grid;position:fixed;right:16px;bottom:16px;z-index:40;width:44px;height:44px;background:#18244c;color:#fff;border:0;box-shadow:0 10px 24px rgba(24,36,76,.25)}
+ .teacher-dashboard-page,.teacher-dashboard{padding:24px 16px 70px}
+ .teacher-dashboard .page-heading,.teacher-dashboard-page .page-heading{align-items:flex-start}
+}
+
 /* Keep the passage centered in the viewport while controls stay within reach. */
 body:has(.reading-focus),
 body:has(.calibration-overlay) { overflow: hidden; }

@@ -2,7 +2,7 @@ import secrets
 from fastapi import APIRouter,Depends,HTTPException
 from pydantic import BaseModel,Field
 from pymongo import ReturnDocument
-from core import db,uid,now,current_user
+from core import db,uid,now,current_user,data_owner
 
 router=APIRouter(tags=['games'])
 WORDS=['apel','bunga','mawar','kuning','taman','pagi','buku','mata','ibu','kupu-kupu']
@@ -16,20 +16,21 @@ async def start(user=Depends(current_user)):
     random=secrets.SystemRandom();questions=[]
     for word in random.sample(WORDS,5):
         options=random.sample([w for w in WORDS if w!=word],3)+[word];random.shuffle(options);questions.append({'answer':word,'options':options})
-    g={'id':uid(),'owner_id':user['id'],'questions':questions,'index':0,'score':0,'created_at':now()}
+    g={'id':uid(),'owner_id':data_owner(user),'student_id':user.get('student_id'),'questions':questions,'index':0,'score':0,'created_at':now()}
     await db.games.insert_one(g.copy());return public_game(g)
 
 @router.post('/games/{id}/answer')
 async def answer(id:str,data:Answer,user=Depends(current_user)):
-    g=await db.games.find_one({'id':id,'owner_id':user['id']},{'_id':0})
+    owner=data_owner(user)
+    g=await db.games.find_one({'id':id,'owner_id':owner},{'_id':0})
     if not g:raise HTTPException(404,'Permainan tidak ditemukan.')
     if g['index']>=len(g['questions']):raise HTTPException(409,'Permainan sudah selesai.')
     question=g['questions'][g['index']]
     if data.choice not in question['options']:raise HTTPException(422,'Pilihan tidak valid.')
     correct=data.choice==question['answer']
-    result=await db.games.find_one_and_update({'id':id,'owner_id':user['id'],'index':g['index']},{'$inc':{'index':1,'score':int(correct)}},return_document=ReturnDocument.AFTER,projection={'_id':0})
+    result=await db.games.find_one_and_update({'id':id,'owner_id':owner,'index':g['index']},{'$inc':{'index':1,'score':int(correct)}},return_document=ReturnDocument.AFTER,projection={'_id':0})
     if not result:raise HTTPException(409,'Jawaban sudah diproses.')
-    if result['index']==5:await db.practices.insert_one({'id':uid(),'owner_id':user['id'],'kind':'sound_game','score':result['score'],'stars':result['score']*5,'created_at':now()})
+    if result['index']==5:await db.practices.insert_one({'id':uid(),'owner_id':owner,'student_id':user.get('student_id'),'kind':'sound_game','score':result['score'],'stars':result['score']*5,'created_at':now()})
     return {'correct':correct,'choice':data.choice,'correct_answer':question['answer'],'game':public_game(result)}
 GAZE_LEVELS=[
     {'level':1,'title':'Kata pendek','sentences':['Kucing kecil bermain di taman bunga.','Ibu membeli apel merah.','Rani suka membaca buku.']},
@@ -54,7 +55,7 @@ async def gaze_levels():return GAZE_LEVELS
 @router.post('/games/gaze/finish')
 async def gaze_finish(data:GazeResult,user=Depends(current_user)):
     hits=sum(1 for w in data.words if w.hit)
-    doc={'id':uid(),'owner_id':user['id'],'kind':'gaze_game','level':data.level,'score':data.score,'stars':hits,'words_total':len(data.words),'words_hit':hits,
+    doc={'id':uid(),'owner_id':data_owner(user),'student_id':user.get('student_id'),'kind':'gaze_game','level':data.level,'score':data.score,'stars':hits,'words_total':len(data.words),'words_hit':hits,
          'mean_time_ms':round(sum(w.time_ms for w in data.words if w.hit)/hits,1) if hits else None,'calibration_error':data.calibration_error,'duration':data.duration,
          'words':[w.model_dump() for w in data.words],'created_at':now()}
     await db.practices.insert_one(doc.copy());doc.pop('_id',None)

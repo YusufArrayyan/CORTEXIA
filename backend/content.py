@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
-from core import db, uid, now, teacher, current_user, Document, audit
+import bcrypt
+from pymongo import ReturnDocument
+from core import db, uid, now, teacher, current_user, Document, audit, data_owner
 
 router=APIRouter(tags=['content'])
 class StudentInput(BaseModel):
     alias:str=Field(min_length=2,max_length=50)
     grade:int=Field(ge=1,le=6)
+    login_code:str=Field(default='1234',min_length=4,max_length=20)
     @field_validator('alias')
     @classmethod
     def check_alias(cls,v):
@@ -28,12 +31,21 @@ async def initialize_content():
 
 @router.get('/texts',response_model=list[Document])
 async def texts(user=Depends(current_user)):
-    return await db.texts.find({'owner_id':{'$in':['shared',user['id']]}},{'_id':0}).to_list(100)
+    owner=data_owner(user)
+    return await db.texts.find({'owner_id':{'$in':['shared',owner]}},{'_id':0}).to_list(100)
 
 @router.post('/texts',response_model=Document)
 async def add_text(data:TextInput,user=Depends(teacher)):
     doc={**data.model_dump(),'id':uid(),'owner_id':user['id'],'word_count':len(data.content.split()),'source':'Materi guru','created_at':now()}
     await db.texts.insert_one(doc.copy());return doc
+
+@router.patch('/texts/{id}',response_model=Document)
+async def edit_text(id:str,data:TextInput,user=Depends(teacher)):
+    values={**data.model_dump(),'word_count':len(data.content.split()),'source':'Materi guru'}
+    r=await db.texts.find_one_and_update({'id':id,'owner_id':user['id']},{'$set':values},return_document=ReturnDocument.AFTER,projection={'_id':0})
+    if not r:raise HTTPException(404,'Materi tidak ditemukan.')
+    await audit(user['id'],'edit_text',id)
+    return r
 
 @router.delete('/texts/{id}')
 async def delete_text(id:str,user=Depends(teacher)):
@@ -43,24 +55,42 @@ async def delete_text(id:str,user=Depends(teacher)):
 
 @router.get('/students',response_model=list[Document])
 async def students(user=Depends(current_user)):
-    return await db.students.find({'owner_id':user['id']},{'_id':0}).to_list(500)
+    owner=data_owner(user)
+    if user['role']=='student':
+        return await db.students.find({'owner_id':owner,'id':user.get('student_id')},{'_id':0,'login_code':0}).to_list(10)
+    return await db.students.find({'owner_id':owner},{'_id':0,'login_code':0}).to_list(500)
 
 @router.post('/students',response_model=Document)
 async def add_student(data:StudentInput,user=Depends(current_user)):
-    doc={**data.model_dump(),'id':uid(),'owner_id':user['id'],'created_at':now()}
-    await db.students.insert_one(doc.copy()); await audit(user['id'],'create_student',doc['id']);return doc
+    if user['role']!='teacher':raise HTTPException(403,'Hanya guru yang dapat menambahkan pembaca.')
+    values=data.model_dump()
+    login_code=values.pop('login_code')
+    code_hash=bcrypt.hashpw(login_code.encode(),bcrypt.gensalt()).decode()
+    doc={**values,'login_code_hash':code_hash,'id':uid(),'owner_id':user['id'],'created_at':now()}
+    await db.students.insert_one(doc.copy())
+    email=f"student-{doc['id']}@cortexia.local"
+    account={'id':uid(),'email':email,'name':doc['alias'],'role':'student','password':bcrypt.hashpw(login_code.encode(),bcrypt.gensalt()).decode(),'student_id':doc['id'],'teacher_id':doc['owner_id'],'created_at':now()}
+    await db.users.insert_one(account)
+    await audit(user['id'],'create_student',doc['id'])
+    return {k:v for k,v in doc.items() if k!='login_code'}
 
 @router.delete('/students/{id}')
 async def delete_student(id:str,user=Depends(current_user)):
+    if user['role']!='teacher':raise HTTPException(403,'Hanya guru yang dapat menghapus pembaca.')
     r=await db.students.delete_one({'id':id,'owner_id':user['id']})
     if not r.deleted_count:raise HTTPException(404,'Siswa tidak ditemukan.')
     await db.sessions.delete_many({'student_id':id,'owner_id':user['id']})
+    await db.practices.delete_many({'student_id':id,'owner_id':user['id']})
+    await db.users.delete_many({'student_id':id,'teacher_id':user['id']})
     await audit(user['id'],'delete_student_and_sessions',id)
     return {'ok':True}
 
 @router.get('/dashboard')
 async def dashboard(user=Depends(current_user)):
-    query={'owner_id':user['id']}
+    owner=data_owner(user)
+    query={'owner_id':owner}
+    if user['role']=='student':
+        query['student_id']=user['student_id']
     # Ringkasan saja: data tatapan/kata mentah hanya diambil di halaman hasil sesi.
     light={'_id':0,'gaze_points':0,'segments':0,'layouts':0,'words':0,'reference':0,'metrics.annotations':0,'metrics.word_observations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0,'metrics.gaze.words':0,'metrics.pronunciation.words':0}
     rows=await db.sessions.find(query,light).sort('created_at',-1).to_list(300)
@@ -68,7 +98,8 @@ async def dashboard(user=Depends(current_user)):
     with_accuracy=[r for r in rows if r.get('metrics',{}).get('accuracy') is not None]
     valid=[r for r in with_accuracy if r['metrics'].get('speech_reliable',True)]
     practices=await db.practices.find(query,{'_id':0,'words':0,'assessment.words':0,'assessment.forced_choice.competitors':0}).sort('created_at',-1).to_list(100)
-    return {'students':await db.students.count_documents(query),'session_count':len(rows),'average_accuracy':round(sum(r['metrics']['accuracy'] for r in valid)/len(valid),1) if valid else None,'accuracy_sessions':len(valid),'accuracy_sessions_excluded':len(with_accuracy)-len(valid),'reading_minutes':round(sum(r.get('duration',0) for r in rows)/60,1),'sessions':rows,'practice_count':await db.practices.count_documents(query),'practices':practices}
+    student_count=(1 if user['role']=='student' else await db.students.count_documents({'owner_id':owner}))
+    return {'students':student_count,'session_count':len(rows),'average_accuracy':round(sum(r['metrics']['accuracy'] for r in valid)/len(valid),1) if valid else None,'accuracy_sessions':len(valid),'accuracy_sessions_excluded':len(with_accuracy)-len(valid),'reading_minutes':round(sum(r.get('duration',0) for r in rows)/60,1),'sessions':rows,'practice_count':await db.practices.count_documents(query),'practices':practices}
 
 @router.get('/audit',response_model=list[Document])
 async def audit_log(user=Depends(teacher)):

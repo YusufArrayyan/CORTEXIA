@@ -15,6 +15,9 @@ security = HTTPBearer(auto_error=False)
 def now(): return datetime.now(timezone.utc).isoformat()
 def uid(): return str(uuid.uuid4())
 
+def data_owner(user):
+    return user.get('teacher_id', user['id'])
+
 class Document(BaseModel):
     model_config = ConfigDict(extra='allow')
     id: str

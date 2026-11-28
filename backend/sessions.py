@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
-from core import db,uid,now,current_user,audit,Document
+from core import db,uid,now,current_user,audit,Document,data_owner
 import fluency
 from analytics import transcribe_pcm,clean_words,analyze,align,normalize,asr_ready
 
@@ -136,11 +136,12 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
     except Exception:raise HTTPException(422,'Data sesi tidak valid.')
     if not data.consent:raise HTTPException(400,'Persetujuan pendamping wajib diberikan sebelum perekaman.')
     if data.mode not in ['gaze','multimodal','speech']:raise HTTPException(422,'Modalitas tidak valid.')
-    student=await db.students.find_one({'id':data.student_id,'owner_id':user['id']},{'_id':0})
-    text=await db.texts.find_one({'id':data.text_id,'owner_id':{'$in':['shared',user['id']]}},{'_id':0})
+    owner=data_owner(user)
+    student=await db.students.find_one({'id':data.student_id,'owner_id':owner},{'_id':0})
+    text=await db.texts.find_one({'id':data.text_id,'owner_id':{'$in':['shared',owner]}},{'_id':0})
     if not student or not text:raise HTTPException(404,'Siswa atau materi tidak ditemukan.')
     if data.client_request_id:
-        existing=await db.sessions.find_one({'owner_id':user['id'],'client_request_id':data.client_request_id},{'_id':0})
+        existing=await db.sessions.find_one({'owner_id':owner,'client_request_id':data.client_request_id},{'_id':0})
         if existing:return existing
     speech=await session_speech(audio,text['content']) if audio and audio.filename else {'transcript':'','words':[]}
     duration=speech.get('audio_duration',data.duration)
@@ -157,23 +158,28 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
         measured['qc_flags'].append('REFERENCE_WER_GE_50PCT')
     result['metrics']['fluency'] = measured
     if speech.get('pronunciation_error'):result['analysis_warnings']=[*result.get('analysis_warnings',[]),speech['pronunciation_error']]
-    doc={'id':uid(),'owner_id':user['id'],'student_id':student['id'],'student_alias':student['alias'],'text_id':text['id'],'text_title':text['title'],'reference':text['content'],'duration':duration,'client_duration':data.duration,'mode':data.mode,'transcript':speech['transcript'],'asr_transcript':speech['transcript'] if speech.get('model') else None,'words':speech['words'],'speech_model':speech.get('model'),'speech_error':speech.get('error'),'gaze_points':points,'layouts':layouts,'calibration':calibration,**result,'client_request_id':data.client_request_id,'created_at':now(),'consent_at':now(),'retention_days':30,'expires_at':datetime.now(timezone.utc)+timedelta(days=30),'reviews':[]}
+    doc={'id':uid(),'owner_id':owner,'student_id':student['id'],'student_alias':student['alias'],'text_id':text['id'],'text_title':text['title'],'reference':text['content'],'duration':duration,'client_duration':data.duration,'mode':data.mode,'transcript':speech['transcript'],'asr_transcript':speech['transcript'] if speech.get('model') else None,'words':speech['words'],'speech_model':speech.get('model'),'speech_error':speech.get('error'),'gaze_points':points,'layouts':layouts,'calibration':calibration,**result,'client_request_id':data.client_request_id,'created_at':now(),'consent_at':now(),'retention_days':30,'expires_at':datetime.now(timezone.utc)+timedelta(days=30),'reviews':[]}
     await db.sessions.create_index('expires_at',expireAfterSeconds=0)
     try:await db.sessions.insert_one(doc.copy())
     except DuplicateKeyError:
         # Dua request bersamaan dengan kunci yang sama: kembalikan sesi yang tersimpan lebih dulu.
-        existing=await db.sessions.find_one({'owner_id':user['id'],'client_request_id':data.client_request_id},{'_id':0})
+        existing=await db.sessions.find_one({'owner_id':owner,'client_request_id':data.client_request_id},{'_id':0})
         if existing:return existing
         raise
-    await audit(user['id'],'create_session',doc['id'])
+    await audit(owner,'create_session',doc['id'])
     return doc
 
 @router.get('/sessions',response_model=list[Document])
 async def list_sessions(user=Depends(current_user)):
-    return await db.sessions.find({'owner_id':user['id']},{'_id':0,'gaze_points':0,'layouts':0,'metrics.word_observations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0}).sort('created_at',-1).to_list(300)
+    owner=data_owner(user)
+    query={'owner_id':owner}
+    if user['role']=='student':query['student_id']=user['student_id']
+    return await db.sessions.find(query,{'_id':0,'gaze_points':0,'layouts':0,'metrics.word_observations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0}).sort('created_at',-1).to_list(300)
 
 async def owned(id,user):
-    doc=await db.sessions.find_one({'id':id,'owner_id':user['id']},{'_id':0})
+    query={'id':id,'owner_id':data_owner(user)}
+    if user['role']=='student':query['student_id']=user['student_id']
+    doc=await db.sessions.find_one(query,{'_id':0})
     if not doc:raise HTTPException(404,'Sesi tidak ditemukan.')
     # Older sessions stored research-model notes alongside measurement limitations.
     if 'limitations' in doc:
@@ -201,12 +207,12 @@ async def review(id:str,data:Correction,user=Depends(current_user)):
     if 'fluency' in doc['metrics']:
         result['metrics']['fluency'] = doc['metrics']['fluency']
     history={'previous_transcript':doc['transcript'],'transcript':data.transcript,'note':data.note,'reviewer_id':user['id'],'created_at':now()}
-    await db.sessions.update_one({'id':id,'owner_id':user['id']},{'$set':{**result,'transcript':data.transcript,'reviewed':True},'$push':{'reviews':history}})
+    await db.sessions.update_one({'id':id,'owner_id':data_owner(user)},{'$set':{**result,'transcript':data.transcript,'reviewed':True},'$push':{'reviews':history}})
     await audit(user['id'],'review_transcript',id);return await owned(id,user)
 
 @router.delete('/sessions/{id}')
 async def delete_session(id:str,user=Depends(current_user)):
-    await owned(id,user);await db.sessions.delete_one({'id':id,'owner_id':user['id']});await audit(user['id'],'delete_session',id);return {'ok':True}
+    await owned(id,user);await db.sessions.delete_one({'id':id,'owner_id':data_owner(user)});await audit(user['id'],'delete_session',id);return {'ok':True}
 
 @router.get('/sessions/{id}/report')
 async def report(id:str,user=Depends(current_user)):
@@ -239,7 +245,7 @@ async def pronunciation(word:str=Form(...),consent:bool=Form(...),audio:UploadFi
     if len(word)>100 or not normalize(word):raise HTTPException(422,'Kata tidak valid.')
     if not pr.vosk_ready():
         r=await audio_result(audio);m=align(word,r['transcript']) if r['transcript'] else {'accuracy':None,'wer':None,'annotations':[]}
-        doc={'id':uid(),'owner_id':user['id'],'word':word,'transcript':r['transcript'],'metrics':m,'assessment':None,'created_at':now(),'kind':'pronunciation'}
+        doc={'id':uid(),'owner_id':data_owner(user),'student_id':user.get('student_id'),'word':word,'transcript':r['transcript'],'metrics':m,'assessment':None,'created_at':now(),'kind':'pronunciation'}
         await db.practices.insert_one(doc.copy());return doc
     data=await audio.read(10*1024*1024+1)
     if len(data)>10*1024*1024:raise HTTPException(413,'Audio maksimal 10 MB.')
@@ -254,6 +260,6 @@ async def pronunciation(word:str=Form(...),consent:bool=Form(...),audio:UploadFi
     finally:
         if name and os.path.exists(name):os.unlink(name)
     metrics={'accuracy':result['score'],'similarity':result['similarity']}
-    doc={'id':uid(),'owner_id':user['id'],'word':word,'transcript':result['transcript'],'metrics':metrics,'assessment':result,'created_at':now(),'kind':'pronunciation'}
+    doc={'id':uid(),'owner_id':data_owner(user),'student_id':user.get('student_id'),'word':word,'transcript':result['transcript'],'metrics':metrics,'assessment':result,'created_at':now(),'kind':'pronunciation'}
     await db.practices.insert_one(doc.copy());await audit(user['id'],'pronunciation',doc['id'])
     return doc
