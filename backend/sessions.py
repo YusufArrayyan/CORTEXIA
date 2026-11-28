@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
-from core import db,uid,now,current_user,audit,Document,data_owner
+from core import db,uid,now,current_user,audit,Document,data_owner,reader_profile_ids
 import fluency
 from analytics import transcribe_pcm,clean_words,analyze,align,normalize,asr_ready
 
@@ -138,10 +138,14 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
     if data.mode not in ['gaze','multimodal','speech']:raise HTTPException(422,'Modalitas tidak valid.')
     owner=data_owner(user)
     student=await db.students.find_one({'id':data.student_id,'owner_id':owner},{'_id':0})
+    if user['role']=='student' and data.student_id not in await reader_profile_ids(user):
+        student=None
     text=await db.texts.find_one({'id':data.text_id,'owner_id':{'$in':['shared',owner]}},{'_id':0})
     if not student or not text:raise HTTPException(404,'Siswa atau materi tidak ditemukan.')
     if data.client_request_id:
-        existing=await db.sessions.find_one({'owner_id':owner,'client_request_id':data.client_request_id},{'_id':0})
+        idempotency_query={'owner_id':owner,'client_request_id':data.client_request_id}
+        if user['role']=='student':idempotency_query['student_id']=student['id']
+        existing=await db.sessions.find_one(idempotency_query,{'_id':0})
         if existing:return existing
     speech=await session_speech(audio,text['content']) if audio and audio.filename else {'transcript':'','words':[]}
     duration=speech.get('audio_duration',data.duration)
@@ -163,9 +167,11 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
     try:await db.sessions.insert_one(doc.copy())
     except DuplicateKeyError:
         # Dua request bersamaan dengan kunci yang sama: kembalikan sesi yang tersimpan lebih dulu.
-        existing=await db.sessions.find_one({'owner_id':owner,'client_request_id':data.client_request_id},{'_id':0})
+        idempotency_query={'owner_id':owner,'client_request_id':data.client_request_id}
+        if user['role']=='student':idempotency_query['student_id']=student['id']
+        existing=await db.sessions.find_one(idempotency_query,{'_id':0})
         if existing:return existing
-        raise
+        raise HTTPException(409,'Kunci permintaan sesi sudah digunakan oleh profil lain.')
     await audit(owner,'create_session',doc['id'])
     return doc
 
@@ -173,12 +179,12 @@ async def create_session(payload:str=Form(...),audio:UploadFile|None=File(None),
 async def list_sessions(user=Depends(current_user)):
     owner=data_owner(user)
     query={'owner_id':owner}
-    if user['role']=='student':query['student_id']=user['student_id']
+    if user['role']=='student':query['student_id']={'$in':await reader_profile_ids(user)}
     return await db.sessions.find(query,{'_id':0,'gaze_points':0,'layouts':0,'metrics.word_observations':0,'metrics.gaze.scanpath':0,'metrics.gaze.line_timeline':0}).sort('created_at',-1).to_list(300)
 
 async def owned(id,user):
     query={'id':id,'owner_id':data_owner(user)}
-    if user['role']=='student':query['student_id']=user['student_id']
+    if user['role']=='student':query['student_id']={'$in':await reader_profile_ids(user)}
     doc=await db.sessions.find_one(query,{'_id':0})
     if not doc:raise HTTPException(404,'Sesi tidak ditemukan.')
     # Older sessions stored research-model notes alongside measurement limitations.

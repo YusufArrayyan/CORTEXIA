@@ -2,12 +2,12 @@ import secrets, hashlib, bcrypt
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
-from core import db, uid, now, current_user, security, audit, UserOut
+from core import db, uid, now, current_user, security, audit, teacher, UserOut
 
 router = APIRouter(tags=['auth'])
 attempts = {}
-student_attempts = {}
 class Login(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=72)
@@ -30,9 +30,12 @@ class Register(Login):
         if v not in ['teacher','student']: raise ValueError('Peran tidak valid')
         return v
 
-class StudentLogin(BaseModel):
-    student_id: str = Field(min_length=1, max_length=100)
-    login_code: str = Field(min_length=4, max_length=20)
+class InvitationInput(BaseModel):
+    code: str = Field(min_length=8, max_length=64)
+    @field_validator('code')
+    @classmethod
+    def normalize(cls,v):
+        return v.strip().upper()
 class AuthResponse(BaseModel):
     token: str
     user: UserOut
@@ -50,34 +53,50 @@ async def register(data:Register):
     await audit(user['id'],'register')
     return await issue(user)
 
-@router.get('/auth/student-profiles')
-async def student_profiles():
-    rows=await db.students.find({},{'_id':0,'id':1,'alias':1,'grade':1}).sort([('grade',1),('alias',1)]).to_list(500)
-    return rows
+@router.post('/auth/invitations')
+async def create_invitation(user=Depends(teacher)):
+    code=secrets.token_urlsafe(9).upper()
+    await db.invite_codes.insert_one({'id':uid(),'teacher_id':user['id'],
+        'code_hash':hashlib.sha256(code.encode()).hexdigest(),'created_at':now()})
+    return {'code':code}
 
-@router.post('/auth/student-login', response_model=AuthResponse)
-async def student_login(data:StudentLogin):
-    student=await db.students.find_one({'id':data.student_id},{'_id':0})
-    if not student:
-        raise HTTPException(404,'Profil pembaca tidak ditemukan.')
-    key=(student['id'],)
-    recent=[t for t in student_attempts.get(key,[]) if (datetime.now(timezone.utc)-t).total_seconds()<300]
-    if len(recent)>=10:
-        raise HTTPException(429,'Terlalu banyak percobaan. Coba lagi dalam 5 menit.')
-    code_hash=student.get('login_code_hash')
-    if not code_hash or not bcrypt.checkpw(data.login_code.encode(),code_hash.encode()):
-        student_attempts[key]=recent+[datetime.now(timezone.utc)]
-        raise HTTPException(401,'Kode masuk siswa tidak sesuai.')
-    student_attempts.pop(key,None)
-    email=f"student-{student['id']}@cortexia.local"
-    user=await db.users.find_one({'email':email},{'_id':0})
-    if not user:
-        user={'id':uid(),'email':email,'name':student['alias'],'role':'student','password':bcrypt.hashpw(data.login_code.encode(),bcrypt.gensalt()).decode(),'student_id':student['id'],'teacher_id':student['owner_id'],'created_at':now()}
-        await db.users.insert_one(user.copy())
-    if user.get('student_id') != student['id'] or user.get('teacher_id') != student['owner_id']:
-        await db.users.update_one({'email':email},{'$set':{'student_id':student['id'],'teacher_id':student['owner_id'],'name':student['alias'],'role':'student'}})
-        user={'id':user['id'],'email':email,'name':student['alias'],'role':'student','student_id':student['id'],'teacher_id':student['owner_id'],'password':user['password'],'created_at':user.get('created_at',now())}
-    return await issue(user)
+@router.post('/auth/connect-teacher')
+async def connect_teacher(data:InvitationInput,user=Depends(current_user)):
+    if user['role']!='student':
+        raise HTTPException(403,'Hanya akun siswa yang dapat memakai kode undangan.')
+    if user.get('teacher_id'):
+        raise HTTPException(409,'Akun ini sudah terhubung dengan guru.')
+    code_hash=hashlib.sha256(data.code.encode()).hexdigest()
+    invitation=await db.invite_codes.find_one_and_update(
+        {'code_hash':code_hash,'used_by':{'$exists':False}},
+        {'$set':{'used_by':user['id'],'used_at':now()}},
+        return_document=ReturnDocument.BEFORE)
+    if not invitation:
+        raise HTTPException(400,'Kode undangan tidak valid atau sudah dipakai.')
+    teacher_user=await db.users.find_one({'id':invitation['teacher_id'],'role':'teacher'},{'_id':0,'name':1})
+    if not teacher_user:
+        await db.invite_codes.update_one({'id':invitation['id'],'used_by':user['id']},
+                                         {'$unset':{'used_by':1,'used_at':1}})
+        raise HTTPException(400,'Akun guru untuk kode ini tidak ditemukan.')
+    linked=await db.users.find_one_and_update(
+        {'id':user['id'],'role':'student','teacher_id':{'$in':[None,'']}},
+        {'$set':{'teacher_id':invitation['teacher_id'],'linked_at':now()}},
+        return_document=ReturnDocument.AFTER,projection={'_id':0,'password':0})
+    if not linked:
+        await db.invite_codes.update_one({'id':invitation['id'],'used_by':user['id']},
+                                         {'$unset':{'used_by':1,'used_at':1}})
+        raise HTTPException(409,'Akun ini sudah terhubung dengan guru.')
+    profiles=await db.students.find({'account_id':user['id']},{'_id':0,'id':1}).to_list(1000)
+    profile_ids=[profile['id'] for profile in profiles]
+    await db.students.update_many({'account_id':user['id']},
+        {'$set':{'teacher_id':invitation['teacher_id'],'owner_id':invitation['teacher_id']}})
+    if profile_ids:
+        for collection in (db.sessions,db.practices,db.games):
+            await collection.update_many(
+                {'student_id':{'$in':profile_ids},'owner_id':user['id']},
+                {'$set':{'owner_id':invitation['teacher_id']}})
+    await audit(user['id'],'connect_teacher',invitation['teacher_id'])
+    return {'linked':True,'teacher':{'id':invitation['teacher_id'],'name':teacher_user['name']}}
 
 @router.post('/auth/login', response_model=AuthResponse)
 async def login(data:Login, request:Request):

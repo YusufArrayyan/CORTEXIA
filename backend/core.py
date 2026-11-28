@@ -18,6 +18,16 @@ def uid(): return str(uuid.uuid4())
 def data_owner(user):
     return user.get('teacher_id', user['id'])
 
+async def reader_profile_ids(user):
+    owner=data_owner(user)
+    rows=await db.students.find({'account_id':user['id'],'owner_id':owner},{'_id':0,'id':1}).to_list(1000)
+    ids=[row['id'] for row in rows]
+    legacy_id=user.get('student_id')
+    if legacy_id and legacy_id not in ids:
+        legacy=await db.students.find_one({'id':legacy_id,'owner_id':owner},{'_id':0,'id':1})
+        if legacy:ids.append(legacy_id)
+    return ids
+
 class Document(BaseModel):
     model_config = ConfigDict(extra='allow')
     id: str
@@ -27,6 +37,8 @@ class UserOut(BaseModel):
     name: str
     email: str
     role: str
+    teacher_id: str | None = None
+    student_id: str | None = None
 
 async def current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials:

@@ -171,6 +171,194 @@ def test_student_create_list_persist(api_client, test_accounts, teacher1_entitie
     assert any(s["id"] == teacher1_entities["student"]["id"] for s in students)
 
 
+def test_student_account_can_login_before_linking(api_client, test_accounts):
+    payload = test_accounts["student_user"]["payload"]
+    response = api_client.post(
+        f"{API_BASE}/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+        timeout=30,
+    )
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["user"]["role"] == "student"
+
+    dashboard = api_client.get(
+        f"{API_BASE}/dashboard",
+        headers=auth_headers(data["token"]),
+        timeout=30,
+    )
+    assert dashboard.status_code == 200, dashboard.text
+    assert dashboard.json()["session_count"] == 0
+
+
+def test_student_invitation_links_all_profiles_and_isolates_access(
+    api_client, test_accounts, teacher1_entities
+):
+    student_token = test_accounts["student_user"]["token"]
+    teacher_token = test_accounts["teacher1"]["token"]
+    other_teacher_token = test_accounts["teacher2"]["token"]
+    student_headers = auth_headers(student_token)
+
+    first = api_client.post(
+        f"{API_BASE}/students",
+        json={"alias": "TEST Account Reader One", "grade": 2},
+        headers=student_headers,
+        timeout=30,
+    )
+    second = api_client.post(
+        f"{API_BASE}/students",
+        json={"alias": "TEST Account Reader Two", "grade": 4},
+        headers=student_headers,
+        timeout=30,
+    )
+    assert first.status_code == second.status_code == 200
+    profile_ids = {first.json()["id"], second.json()["id"]}
+
+    denied_code = api_client.post(
+        f"{API_BASE}/auth/invitations", headers=student_headers, timeout=30
+    )
+    assert denied_code.status_code == 403
+    invitation = api_client.post(
+        f"{API_BASE}/auth/invitations", headers=auth_headers(teacher_token), timeout=30
+    )
+    assert invitation.status_code == 200, invitation.text
+    code = invitation.json()["code"]
+
+    linked = api_client.post(
+        f"{API_BASE}/auth/connect-teacher",
+        json={"code": code.lower()},
+        headers=student_headers,
+        timeout=30,
+    )
+    assert linked.status_code == 200, linked.text
+    assert linked.json()["teacher"]["id"] == test_accounts["teacher1"]["user"]["id"]
+    me = api_client.get(f"{API_BASE}/auth/me", headers=student_headers, timeout=30)
+    assert me.json()["teacher_id"] == test_accounts["teacher1"]["user"]["id"]
+
+    other_student = api_client.post(
+        f"{API_BASE}/auth/register",
+        json={
+            "name": "TEST Other Student",
+            "email": f"test.other.student.{uuid.uuid4().hex[:8]}@example.com",
+            "password": "TestPass123!",
+            "role": "student",
+        },
+        timeout=30,
+    )
+    assert other_student.status_code == 200, other_student.text
+    reused_code = api_client.post(
+        f"{API_BASE}/auth/connect-teacher",
+        json={"code": code},
+        headers=auth_headers(other_student.json()["token"]),
+        timeout=30,
+    )
+    assert reused_code.status_code == 400
+
+    later_profile = api_client.post(
+        f"{API_BASE}/students",
+        json={"alias": "TEST Account Reader Later", "grade": 5},
+        headers=student_headers,
+        timeout=30,
+    )
+    assert later_profile.status_code == 200
+    profile_ids.add(later_profile.json()["id"])
+    listed = api_client.get(f"{API_BASE}/students", headers=student_headers, timeout=30)
+    assert {profile["id"] for profile in listed.json()} == profile_ids
+
+    groups = api_client.get(
+        f"{API_BASE}/students/accounts", headers=auth_headers(teacher_token), timeout=30
+    )
+    assert groups.status_code == 200, groups.text
+    account = next(
+        row for row in groups.json()
+        if row["email"] == test_accounts["student_user"]["payload"]["email"]
+    )
+    assert {profile["id"] for profile in account["profiles"]} == profile_ids
+
+    other_groups = api_client.get(
+        f"{API_BASE}/students/accounts",
+        headers=auth_headers(other_teacher_token),
+        timeout=30,
+    )
+    assert all(row["id"] != account["id"] for row in other_groups.json())
+    cross_edit = api_client.patch(
+        f"{API_BASE}/students/{first.json()['id']}",
+        json={"alias": "TEST unauthorized edit", "grade": 2},
+        headers=auth_headers(other_teacher_token),
+        timeout=30,
+    )
+    assert cross_edit.status_code == 404
+
+    payload = {
+        "student_id": first.json()["id"],
+        "text_id": teacher1_entities["text"]["id"],
+        "consent": True,
+        "mode": "speech",
+        "duration": 8,
+        "client_request_id": "shared-profile-key-001",
+        "gaze_points": [],
+        "calibration": {"median_error": None, "validation_samples": 0, "passed": False},
+    }
+    session = api_client.post(
+        f"{API_BASE}/sessions",
+        headers=student_headers,
+        data={"payload": __import__("json").dumps(payload)},
+        timeout=50,
+    )
+    assert session.status_code == 200, session.text
+    teacher1_entities["session_ids"].append(session.json()["id"])
+
+    second_payload = {**payload, "student_id": second.json()["id"]}
+    second_session = api_client.post(
+        f"{API_BASE}/sessions",
+        headers=student_headers,
+        data={"payload": __import__("json").dumps(second_payload)},
+        timeout=50,
+    )
+    assert second_session.status_code == 200, second_session.text
+    assert second_session.json()["id"] != session.json()["id"]
+    teacher1_entities["session_ids"].append(second_session.json()["id"])
+    duplicate = api_client.post(
+        f"{API_BASE}/sessions",
+        headers=student_headers,
+        data={"payload": __import__("json").dumps(payload)},
+        timeout=30,
+    )
+    assert duplicate.status_code == 200
+    assert duplicate.json()["id"] == session.json()["id"]
+    own_sessions = api_client.get(
+        f"{API_BASE}/sessions", headers=student_headers, timeout=30
+    )
+    assert {row["student_id"] for row in own_sessions.json()} == {
+        first.json()["id"], second.json()["id"]
+    }
+
+    dashboard = api_client.get(
+        f"{API_BASE}/dashboard", headers=student_headers, timeout=30
+    )
+    assert dashboard.status_code == 200, dashboard.text
+    assert dashboard.json()["session_count"] == 2
+    assert {row["student_id"] for row in dashboard.json()["sessions"]} == {
+        first.json()["id"], second.json()["id"]
+    }
+
+    foreign_profile = teacher1_entities["student"]["id"]
+    foreign_session = api_client.post(
+        f"{API_BASE}/sessions",
+        headers=student_headers,
+        data={"payload": __import__("json").dumps({**payload, "student_id": foreign_profile})},
+        timeout=30,
+    )
+    assert foreign_session.status_code == 404
+
+    cross_session = api_client.get(
+        f"{API_BASE}/sessions/{session.json()['id']}",
+        headers=auth_headers(other_teacher_token),
+        timeout=30,
+    )
+    assert cross_session.status_code == 404
+
+
 def test_cross_user_cannot_delete_other_student(api_client, test_accounts, teacher1_entities):
     token = test_accounts["teacher2"]["token"]
     student_id = teacher1_entities["student"]["id"]

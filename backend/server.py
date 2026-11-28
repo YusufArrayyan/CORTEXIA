@@ -13,9 +13,14 @@ from games import router as games_router
 async def lifespan(app):
     await db.users.create_index('email', unique=True)
     await db.tokens.create_index('expires_at', expireAfterSeconds=0)
+    await db.invite_codes.create_index('code_hash', unique=True)
     await db.sessions.create_index([('owner_id', 1), ('created_at', -1)])
-    # Idempotensi: satu sesi per (pemilik, client_request_id); sesi tanpa kunci tidak terkena indeks.
-    await db.sessions.create_index([('owner_id', 1), ('client_request_id', 1)], unique=True, name='idempotency',
+    # Idempotensi terpisah per profil agar akun siswa berbanyak profil tidak berbagi kunci.
+    indexes=await db.sessions.index_information()
+    expected_idempotency_key=[('owner_id', 1), ('student_id', 1), ('client_request_id', 1)]
+    if 'idempotency' in indexes and indexes['idempotency']['key']!=expected_idempotency_key:
+        await db.sessions.drop_index('idempotency')
+    await db.sessions.create_index(expected_idempotency_key, unique=True, name='idempotency',
                                    partialFilterExpression={'client_request_id': {'$type': 'string'}})
     await db.training_jobs.create_index('user_id', unique=True)
     from research import interrupt_stale_jobs

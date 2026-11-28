@@ -3,14 +3,16 @@ import json
 import math
 import os
 import sys
+import asyncio
 
 import numpy as np
-
 os.environ.setdefault("MONGO_URL", "mongodb://127.0.0.1:27017")
 os.environ.setdefault("DB_NAME", "cortexia_unit")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import analytics  # noqa: E402
+from auth import InvitationInput  # noqa: E402
+from content import StudentInput  # noqa: E402
 from analytics import analyze, sanitize  # noqa: E402
 
 REF = "Rani pergi ke taman bunga, lalu duduk di bangku."
@@ -83,3 +85,12 @@ def test_speech_failure_keeps_gaze_result():
     assert r["metrics"]["gaze_usable"] and r["metrics"]["accuracy"] is None
     assert r["quality"] == "parsial" and r["metrics"]["modalities_passed"] == ["tatapan"]
     assert r["metrics"]["multimodal"]["basis"] == "tatapan saja"
+
+
+def test_student_invitation_code_is_trimmed_and_case_insensitive():
+    assert InvitationInput(code="  aBcD-1234  ").code == "ABCD-1234"
+
+
+def test_student_profile_input_has_no_invitation_field():
+    assert StudentInput(alias="Pembaca", grade=1).model_dump() == {"alias": "Pembaca", "grade": 1}
+    assert set(StudentInput.model_fields) == {"alias", "grade"}
